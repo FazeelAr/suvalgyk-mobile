@@ -4,6 +4,7 @@ import { colors } from '../theme/colors';
 import { blogService } from '../services/blogService';
 import { resolveMediaUrl } from '../lib/media';
 import { spacing } from '../theme/spacing';
+import OptimizedImage from '../components/OptimizedImage';
 
 export default function BlogListScreen({ navigation }: any) {
   const [posts, setPosts] = useState<any[]>([]);
@@ -32,7 +33,7 @@ export default function BlogListScreen({ navigation }: any) {
     return (
       <Pressable style={styles.card} onPress={() => navigation.navigate('BlogDetail', { slug: item.slug })}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.cardImage} />
+          <OptimizedImage uri={imageUrl} style={styles.cardImage} />
         ) : (
           <View style={styles.cardPlaceholder}>
             <Text style={styles.cardPlaceholderText}>📝</Text>
@@ -57,7 +58,7 @@ export default function BlogListScreen({ navigation }: any) {
           <Text style={styles.heroText}>
             Straipsniai ir naujienos iš mūsų virtuvės, pateikti taip pat, kaip svetainės mobiliajame vaizde.
           </Text>
-          <Image source={{ uri: 'https://suvalgyk.lt/blog.png' }} style={styles.heroImage} />
+          <OptimizedImage uri="https://suvalgyk.lt/blog.png" style={styles.heroImage} />
         </View>
 
         {error ? (

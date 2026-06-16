@@ -68,7 +68,7 @@ export const useGenerateRecipe = () => {
               cleanTimers();
               setGenerating(false);
               setError(
-                `Nepavyko gauti recepto būsenos iš serverio (${API_BASE_URL}). Patikrinkite backend URL ir bandykite dar kartą.`
+                `Nepavyko gauti recepto būsenos iš serverio. Patikrinkite interneto ryšį ir bandykite dar kartą.`
               );
             }
           }
@@ -77,7 +77,7 @@ export const useGenerateRecipe = () => {
         pollTimeoutRef.current = setTimeout(() => {
           cleanTimers();
           setGenerating(false);
-          setError('Gavimo laikas baigėsi. Prašome bandyti dar kartą.');
+          setError('Gavimo laikas baigėsi (5 min). Receptas gali dar būti kuriamas. Bandykite dar kartą.');
         }, 300000);
       } else {
         setGenerating(false);
@@ -86,7 +86,17 @@ export const useGenerateRecipe = () => {
     } catch (err: any) {
       cleanTimers();
       setGenerating(false);
-      setError(err.message || 'Nepavyko sugeneruoti recepto.');
+      
+      // Better error messages for common issues
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        setError('Serveris neatsako (timeout). Patikrinkite interneto ryšį ir bandykite dar kartą.');
+      } else if (err.message?.includes('Network')) {
+        setError('Tinklo klaida. Patikrinkite savo interneto ryšį.');
+      } else if (err.response?.status === 429) {
+        setError('Per daug užklausų. Palaukite kelias minutes ir bandykite dar kartą.');
+      } else {
+        setError(err.message || 'Nepavyko sugeneruoti recepto. Bandykite dar kartą.');
+      }
     }
   }, []);
 

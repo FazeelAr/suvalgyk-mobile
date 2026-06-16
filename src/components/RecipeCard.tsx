@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import OptimizedImage from './OptimizedImage';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
@@ -33,7 +34,7 @@ const RecipeCard = ({ recipe, onPress }: Props) => {
 
   return (
     <TouchableOpacity activeOpacity={0.85} style={styles.card} onPress={onPress}>
-      {imageUrl ? <Image source={{ uri: imageUrl }} style={styles.image} /> : <View style={styles.placeholder}><Text style={styles.placeholderText}>🍳</Text></View>}
+      <OptimizedImage uri={imageUrl} style={styles.image} />
 
       <View style={styles.contentContainer}>
         <Text style={styles.title} numberOfLines={2}>{title}</Text>

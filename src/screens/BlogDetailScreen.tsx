@@ -5,6 +5,7 @@ import { blogService } from '../services/blogService';
 import { colors } from '../theme/colors';
 import { resolveMediaUrl } from '../lib/media';
 import { spacing } from '../theme/spacing';
+import OptimizedImage from '../components/OptimizedImage';
 
 export default function BlogDetailScreen({ route }: any) {
   const { slug } = route.params || {};
@@ -32,7 +33,7 @@ export default function BlogDetailScreen({ route }: any) {
       <AppHeader title={post?.title || 'Straipsnis'} />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.heroCard}>
-          {imageUrl ? <Image source={{ uri: imageUrl }} style={styles.heroImage} /> : null}
+          {imageUrl ? <OptimizedImage uri={imageUrl} style={styles.heroImage} /> : null}
           <Text style={styles.title}>{post?.title}</Text>
           <Text style={styles.meta}>{post?.meta_description}</Text>
         </View>

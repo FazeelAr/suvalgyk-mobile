@@ -14,6 +14,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import ToggleButtonGroup from '../components/ToggleButtonGroup';
+import OptimizedImage from '../components/OptimizedImage';
+import { uploadService } from '../services/uploadService';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { useGenerateRecipe } from '../hooks/useGenerateRecipe';
@@ -37,6 +39,7 @@ export default function HomeScreen() {
   const [dietaryPreferences, setDietaryPreferences] = useState('Be glitimo, jei įmanoma');
   const [mealType, setMealType] = useState('lunch');
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { generateRecipe, generating, progressMsg, error } = useGenerateRecipe();
 
   const requestPayload = useMemo(() => ({
@@ -52,8 +55,28 @@ export default function HomeScreen() {
     }
   }, [error]);
 
-  const handleGenerateRecipe = () => {
-    generateRecipe(requestPayload, (slug) => {
+  const handleGenerateRecipe = async () => {
+    let finalImageUrl = '';
+
+    if (inputType === 'image' && imageUri) {
+      try {
+        setUploading(true);
+        finalImageUrl = await uploadService.uploadImage(imageUri);
+      } catch (err) {
+        setUploading(false);
+        Alert.alert('Klaida', 'Nepavyko įkelti nuotraukos.');
+        return;
+      } finally {
+        setUploading(false);
+      }
+    }
+
+    const payload = {
+      ...requestPayload,
+      image_url: finalImageUrl,
+    };
+
+    generateRecipe(payload, (slug) => {
       navigation.navigate('Receptai', {
         screen: 'RecipeDetail',
         params: { slug },
@@ -75,8 +98,8 @@ export default function HomeScreen() {
 
       const result =
         source === 'camera'
-          ? await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true })
-          : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: true });
+          ? await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true, aspect: [4, 3] })
+          : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: true, aspect: [4, 3] });
 
       if (!result.canceled && result.assets[0]?.uri) {
         setImageUri(result.assets[0].uri);
@@ -119,7 +142,7 @@ export default function HomeScreen() {
               <Text style={styles.label}>Įkelk ingredientų nuotrauką</Text>
               <View style={styles.uploadBox}>
                 {imageUri ? (
-                  <Image source={{ uri: imageUri }} style={styles.previewImage} />
+                  <OptimizedImage uri={imageUri} style={styles.previewImage} />
                 ) : (
                   <Text style={styles.uploadIcon}>🖼️</Text>
                 )}
@@ -171,11 +194,11 @@ export default function HomeScreen() {
           </View>
 
           <Pressable
-            style={[styles.submitButton, generating ? styles.submitButtonDisabled : null]}
+            style={[styles.submitButton, (generating || uploading) ? styles.submitButtonDisabled : null]}
             onPress={handleGenerateRecipe}
-            disabled={generating}
+            disabled={generating || uploading}
           >
-            <Text style={styles.submitButtonText}>{generating ? progressMsg || 'Gaminama...' : 'Sukurti receptą'}</Text>
+            <Text style={styles.submitButtonText}>{(generating || uploading) ? (uploading ? 'Keliama nuotrauka...' : (progressMsg || 'Gaminama...')) : 'Sukurti receptą'}</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -183,9 +206,12 @@ export default function HomeScreen() {
       <Modal transparent visible={generating} animationType="fade" statusBarTranslucent>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.modalTitle}>Kuriame receptą</Text>
-            <Text style={styles.modalText}>{progressMsg || 'Palaukite, kol paruošime pasiūlymą iš jūsų ingredientų.'}</Text>
+            <Text style={styles.modalTitle}>Palaukite</Text>
+            <Text style={styles.modalDescription}>Ruošiamas receptas</Text>
+            <Image 
+              source={require('../../assets/preparing-recipe.gif')}
+              style={styles.preparingGif}
+            />
           </View>
         </View>
       </Modal>
@@ -377,6 +403,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '900',
     textAlign: 'center',
+  },
+  modalDescription: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  preparingGif: {
+    width: 150,
+    height: 150,
+    marginTop: 12,
   },
   modalText: {
     color: colors.textSecondary,
