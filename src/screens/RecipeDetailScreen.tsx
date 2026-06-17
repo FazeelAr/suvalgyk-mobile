@@ -5,6 +5,7 @@ import { recipeService } from '../services/recipeService';
 import { colors } from '../theme/colors';
 import { resolveMediaUrl } from '../lib/media';
 import OptimizedImage from '../components/OptimizedImage';
+import RecipeCard from '../components/RecipeCard';
 
 export default function RecipeDetailScreen({ route }: any) {
   const { slug } = route.params || {};
@@ -94,45 +95,65 @@ export default function RecipeDetailScreen({ route }: any) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* Hero Image - Optimized with lazy loading */}
+        {/* Hero Image */}
         {imageUrl && (
-          <OptimizedImage
-            uri={imageUrl}
-            style={styles.heroImage}
-            resizeMode="cover"
-            aspectRatio={16 / 9}
-          />
+          <View style={styles.heroContainer}>
+            <OptimizedImage
+              uri={imageUrl}
+              style={styles.heroImage}
+              resizeMode="cover"
+              aspectRatio={16 / 9}
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={() => Alert.alert('Išsaugota', 'Receptas išsaugotas!')}>
+              <Text style={styles.saveIcon}>🔖</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Title */}
         <Text style={styles.title}>{recipe?.title}</Text>
 
-        {/* Meta Strip */}
-        <View style={styles.metaStrip}>
-          {recipe?.prep_time && (
-            <View style={styles.metaItem}>
+        {/* Meta Grid */}
+        <View style={styles.metaGrid}>
+          <View style={styles.metaRow}>
+            <View style={styles.metaGridItem}>
               <Text style={styles.metaEmoji}>⏱️</Text>
-              <Text style={styles.metaText}>{recipe.prep_time || 20} min</Text>
+              <Text style={styles.metaText}>{recipe?.total_time_min || 0} min</Text>
             </View>
-          )}
-          {recipe?.servings && (
-            <View style={styles.metaItem}>
+            <View style={styles.metaGridItem}>
               <Text style={styles.metaEmoji}>👥</Text>
-              <Text style={styles.metaText}>{recipe.servings || 2} porcijos</Text>
+              <Text style={styles.metaText}>{recipe?.servings || 0} porcijos</Text>
             </View>
-          )}
-          {recipe?.estimated_cost && (
-            <View style={styles.metaItem}>
+          </View>
+          <View style={styles.metaRow}>
+            <View style={styles.metaGridItem}>
               <Text style={styles.metaEmoji}>💰</Text>
-              <Text style={styles.metaText}>{formatCurrency(Number(recipe.estimated_cost || 0))}</Text>
+              <Text style={styles.metaText}>{formatCurrency(Number(recipe?.estimated_cost || 0))}</Text>
+            </View>
+            <View style={styles.metaGridItem}>
+              <Text style={styles.metaEmoji}>⭐</Text>
+              <Text style={styles.metaText}>
+                {recipe?.difficulty === 'easy' ? 'Lengva' : recipe?.difficulty === 'medium' ? 'Vidutinė' : 'Sunkia'}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Additional Tags */}
+        <View style={styles.tagsContainer}>
+          {recipe?.meal_type && (
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>{
+                recipe.meal_type === 'breakfast' ? 'Pusryčiai' :
+                recipe.meal_type === 'lunch' ? 'Pietūs' :
+                recipe.meal_type === 'dinner' ? 'Vakarienė' :
+                recipe.meal_type === 'snack' ? 'Užkandis' : recipe.meal_type
+              }</Text>
             </View>
           )}
-          {recipe?.difficulty && (
-            <View style={styles.metaItem}>
-              <Text style={styles.metaEmoji}>🔖</Text>
-              <Text style={styles.metaText}>
-                {recipe.difficulty === 'easy' ? 'Lengva' : recipe.difficulty === 'medium' ? 'Vidutinė' : 'Sunkia'}
-              </Text>
+          {recipe?.dietary && (
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>{recipe.dietary}</Text>
             </View>
           )}
         </View>
@@ -251,40 +272,11 @@ export default function RecipeDetailScreen({ route }: any) {
             <Text style={styles.sectionTitle}>Galbūt patiks ir šie 👇</Text>
             <View style={styles.relatedRecipesContainer}>
               {relatedRecipes.map((relatedRecipe: any) => (
-                <TouchableOpacity
+                <RecipeCard 
                   key={relatedRecipe.id}
-                  style={styles.relatedRecipeCard}
-                  onPress={() => {
-                    navigation.push('RecipeDetail', { slug: relatedRecipe.slug });
-                  }}
-                >
-                  {relatedRecipe.image && (
-                    <OptimizedImage
-                      uri={resolveMediaUrl(relatedRecipe.image)}
-                      style={styles.relatedRecipeImage}
-                      aspectRatio={16 / 9}
-                      resizeMode="cover"
-                    />
-                  )}
-                  <View style={styles.relatedRecipeInfo}>
-                    <Text style={styles.relatedRecipeTitle} numberOfLines={2}>
-                      {relatedRecipe.title}
-                    </Text>
-                    <View style={styles.relatedRecipeMeta}>
-                      {relatedRecipe.estimated_cost && (
-                        <Text style={styles.relatedRecipePrice}>
-                          €{Number(relatedRecipe.estimated_cost).toFixed(2)}
-                        </Text>
-                      )}
-                      {relatedRecipe.prep_time && (
-                        <Text style={styles.relatedRecipeTime}>⏱️ {relatedRecipe.prep_time} min</Text>
-                      )}
-                      {relatedRecipe.servings && (
-                        <Text style={styles.relatedRecipeServings}>👤 {relatedRecipe.servings} p.</Text>
-                      )}
-                    </View>
-                  </View>
-                </TouchableOpacity>
+                  recipe={relatedRecipe}
+                  onPress={() => navigation.push('RecipeDetail', { slug: relatedRecipe.slug })}
+                />
               ))}
             </View>
           </View>
@@ -296,16 +288,39 @@ export default function RecipeDetailScreen({ route }: any) {
 
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 32 },
-  heroImage: { width: '100%', aspectRatio: 16 / 9, borderRadius: 16, marginBottom: 20, backgroundColor: colors.creamWarm },
+  heroContainer: { position: 'relative', marginBottom: 20 },
+  heroImage: { width: '100%', aspectRatio: 16 / 9, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.creamWarm },
+  saveButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  saveIcon: { fontSize: 20 },
   
   // Title
   title: { fontSize: 26, fontWeight: '900', color: colors.textPrimary, marginBottom: 16, lineHeight: 32 },
   
-  // Meta Strip
-  metaStrip: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8 },
+  // Meta Grid
+  metaGrid: { marginBottom: 16, backgroundColor: colors.creamWarm, borderRadius: 12, padding: 12 },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
+  metaGridItem: { flexDirection: 'row', alignItems: 'center', width: '48%', gap: 8 },
   metaEmoji: { fontSize: 18 },
-  metaText: { color: colors.textSecondary, fontSize: 14, fontWeight: '500' },
+  metaText: { color: colors.textSecondary, fontSize: 14, fontWeight: '600' },
+  
+  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
+  tag: { backgroundColor: colors.primaryLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  tagText: { color: colors.primary, fontSize: 12, fontWeight: '700' },
   
   // Section
   section: { marginBottom: 24 },
@@ -432,47 +447,5 @@ const styles = StyleSheet.create({
   // Related Recipes
   relatedRecipesContainer: {
     gap: 12,
-  },
-  relatedRecipeCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#e8e8e8',
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  relatedRecipeImage: {
-    width: 100,
-    height: 100,
-    backgroundColor: colors.creamWarm,
-  },
-  relatedRecipeInfo: {
-    flex: 1,
-    padding: 12,
-    justifyContent: 'space-between',
-  },
-  relatedRecipeTitle: {
-    fontWeight: '700',
-    fontSize: 14,
-    color: colors.textPrimary,
-    marginBottom: 8,
-  },
-  relatedRecipeMeta: {
-    flexDirection: 'column',
-    gap: 3,
-  },
-  relatedRecipePrice: {
-    fontWeight: '700',
-    fontSize: 12,
-    color: colors.primary,
-  },
-  relatedRecipeTime: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  relatedRecipeServings: {
-    fontSize: 11,
-    color: colors.textSecondary,
   },
 });

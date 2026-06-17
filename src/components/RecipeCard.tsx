@@ -16,6 +16,9 @@ type Props = {
 const RecipeCard = ({ recipe, onPress }: Props) => {
   const { title, description, meal_type, image } = recipe || {};
   const imageUrl = resolveMediaUrl(image);
+  
+  const prepTime = recipe?.prep_time_min || recipe?.prep_time;
+  const cost = recipe?.estimated_cost ? Number(recipe.estimated_cost).toFixed(2) : null;
 
   const getMealTypeLabel = (type?: string) => {
     switch (type?.toLowerCase()) {
@@ -37,10 +40,19 @@ const RecipeCard = ({ recipe, onPress }: Props) => {
       <OptimizedImage uri={imageUrl} style={styles.image} />
 
       <View style={styles.contentContainer}>
-        <Text style={styles.title} numberOfLines={2}>{title}</Text>
-        <Text style={styles.description} numberOfLines={3}>{description}</Text>
+        <View>
+          <Text style={styles.title} numberOfLines={2}>{title}</Text>
+          <Text style={styles.description} numberOfLines={2}>{description}</Text>
+        </View>
 
-        <View style={styles.badge}><Text style={styles.badgeText}>{getMealTypeLabel(meal_type)}</Text></View>
+        <View style={styles.footer}>
+          <View style={styles.badge}><Text style={styles.badgeText}>{getMealTypeLabel(meal_type)}</Text></View>
+          <View style={styles.metaInfo}>
+            {cost && <Text style={styles.metaTextPrimary}>€{cost}</Text>}
+            {prepTime && <Text style={styles.metaText}>⏱️ {prepTime}m</Text>}
+            {recipe?.servings ? <Text style={styles.metaText}>👤 {recipe.servings}</Text> : null}
+          </View>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -67,8 +79,12 @@ const styles = StyleSheet.create({
   contentContainer: { padding: spacing.sm, flex: 1, justifyContent: 'space-between' },
   title: { ...typography.h3, fontSize: 14, color: colors.textPrimary, marginBottom: spacing.xs },
   description: { ...typography.body, fontSize: 11, lineHeight: 15, color: colors.textSecondary, marginBottom: spacing.sm },
-  badge: { alignSelf: 'flex-start', backgroundColor: colors.primaryLight, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: 6 },
+  footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.xs },
+  badge: { backgroundColor: colors.primaryLight, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: 6 },
   badgeText: { ...typography.label, fontSize: 10, color: colors.primary },
+  metaInfo: { flexDirection: 'row', gap: 6, alignItems: 'center' },
+  metaText: { fontSize: 10, color: colors.textSecondary, fontWeight: '500' },
+  metaTextPrimary: { fontSize: 11, color: colors.primary, fontWeight: '700' },
 });
 
 export default RecipeCard;

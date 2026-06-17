@@ -15,7 +15,6 @@ import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import ToggleButtonGroup from '../components/ToggleButtonGroup';
 import OptimizedImage from '../components/OptimizedImage';
-import { uploadService } from '../services/uploadService';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { useGenerateRecipe } from '../hooks/useGenerateRecipe';
@@ -39,15 +38,15 @@ export default function HomeScreen() {
   const [dietaryPreferences, setDietaryPreferences] = useState('Be glitimo, jei įmanoma');
   const [mealType, setMealType] = useState('lunch');
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
   const { generateRecipe, generating, progressMsg, error } = useGenerateRecipe();
 
   const requestPayload = useMemo(() => ({
     products,
-    dietary_preferences: dietaryPreferences,
+    dietary_prefs: dietaryPreferences,
     meal_type: mealType,
-    image_url: imageUri ?? '',
-  }), [products, dietaryPreferences, mealType, imageUri]);
+    budget: 'average', // required by serializer
+  }), [products, dietaryPreferences, mealType]);
 
   useEffect(() => {
     if (error) {
@@ -56,25 +55,12 @@ export default function HomeScreen() {
   }, [error]);
 
   const handleGenerateRecipe = async () => {
-    let finalImageUrl = '';
-
-    if (inputType === 'image' && imageUri) {
-      try {
-        setUploading(true);
-        finalImageUrl = await uploadService.uploadImage(imageUri);
-      } catch (err) {
-        setUploading(false);
-        Alert.alert('Klaida', 'Nepavyko įkelti nuotraukos.');
-        return;
-      } finally {
-        setUploading(false);
-      }
-    }
-
-    const payload = {
+    const payload: Record<string, any> = {
       ...requestPayload,
-      image_url: finalImageUrl,
     };
+    if (inputType === 'image' && imageBase64) {
+      payload.image_base64 = imageBase64;
+    }
 
     generateRecipe(payload, (slug) => {
       navigation.navigate('Receptai', {
@@ -98,11 +84,12 @@ export default function HomeScreen() {
 
       const result =
         source === 'camera'
-          ? await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true, aspect: [4, 3] })
-          : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: true, aspect: [4, 3] });
+          ? await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true, aspect: [4, 3], base64: true })
+          : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: true, aspect: [4, 3], base64: true });
 
       if (!result.canceled && result.assets[0]?.uri) {
         setImageUri(result.assets[0].uri);
+        setImageBase64(result.assets[0].base64 || null);
         setInputType('image');
       }
     } catch {
@@ -194,11 +181,11 @@ export default function HomeScreen() {
           </View>
 
           <Pressable
-            style={[styles.submitButton, (generating || uploading) ? styles.submitButtonDisabled : null]}
+            style={[styles.submitButton, generating ? styles.submitButtonDisabled : null]}
             onPress={handleGenerateRecipe}
-            disabled={generating || uploading}
+            disabled={generating}
           >
-            <Text style={styles.submitButtonText}>{(generating || uploading) ? (uploading ? 'Keliama nuotrauka...' : (progressMsg || 'Gaminama...')) : 'Sukurti receptą'}</Text>
+            <Text style={styles.submitButtonText}>{generating ? (progressMsg || 'Gaminama...') : 'Sukurti receptą'}</Text>
           </Pressable>
         </View>
       </ScrollView>
