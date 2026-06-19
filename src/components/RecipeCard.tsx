@@ -49,8 +49,6 @@ const RecipeCard = ({ recipe, onPress }: Props) => {
           <View style={styles.badge}><Text style={styles.badgeText}>{getMealTypeLabel(meal_type)}</Text></View>
           <View style={styles.metaInfo}>
             {cost && <Text style={styles.metaTextPrimary}>€{cost}</Text>}
-            {prepTime && <Text style={styles.metaText}>⏱️ {prepTime}m</Text>}
-            {recipe?.servings ? <Text style={styles.metaText}>👤 {recipe.servings}</Text> : null}
           </View>
         </View>
       </View>

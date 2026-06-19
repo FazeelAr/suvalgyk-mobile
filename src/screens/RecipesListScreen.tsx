@@ -9,6 +9,7 @@ import {
   Pressable,
   ScrollView,
 } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import RecipeCard from '../components/RecipeCard';
 import { recipeService } from '../services/recipeService';
 import { colors } from '../theme/colors';
@@ -24,32 +25,40 @@ const MEAL_TYPES = [
 
 export default function RecipesListScreen({ navigation }: any) {
   const [recipes, setRecipes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [search, setSearch] = useState('');
-  const [mealType, setMealType] = useState('');
 
-  const loadRecipes = async (overrides: { search?: string; meal_type?: string } = {}) => {
-    setLoading(true);
+  const [mealType, setMealType] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [appliedMealType, setAppliedMealType] = useState('');
+
+  const loadRecipes = async (overrides: { search?: string; meal_type?: string } = {}, isInitial = false) => {
+    if (isInitial) setInitialLoading(true);
+    else setIsFetching(true);
+
     try {
       const data = await recipeService.getRecipes({
         search: overrides.search ?? search,
         meal_type: overrides.meal_type ?? mealType,
+        page_size: 100, // Fetch up to 100 recipes at once
       });
 
-      setRecipes(Array.isArray(data) ? data : data.results || []);
+      setRecipes(Array.isArray(data) ? data : (data as any).results || []);
     } catch {
       setRecipes([]);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setIsFetching(false);
     }
   };
 
   useEffect(() => {
-    void loadRecipes();
+    void loadRecipes({}, true);
   }, []);
 
   const filteredRecipes = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
+    const normalizedSearch = appliedSearch.trim().toLowerCase();
 
     return recipes.filter((recipe) => {
       const recipeTitle = String(recipe?.title || '').toLowerCase();
@@ -59,23 +68,27 @@ export default function RecipesListScreen({ navigation }: any) {
         normalizedSearch.length === 0 ||
         recipeTitle.includes(normalizedSearch) ||
         recipeDescription.includes(normalizedSearch);
-      const matchesMealType = mealType.length === 0 || recipeMealType === mealType;
+      const matchesMealType = appliedMealType.length === 0 || recipeMealType === appliedMealType;
 
       return matchesSearch && matchesMealType;
     });
-  }, [recipes, search, mealType]);
+  }, [recipes, appliedSearch, appliedMealType]);
 
   const handleApplyFilters = () => {
+    setAppliedSearch(search);
+    setAppliedMealType(mealType);
     void loadRecipes({ search, meal_type: mealType });
   };
 
   const handleResetFilters = () => {
     setSearch('');
     setMealType('');
+    setAppliedSearch('');
+    setAppliedMealType('');
     void loadRecipes({ search: '', meal_type: '' });
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <View style={[styles.center, { flex: 1, backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -89,7 +102,6 @@ export default function RecipesListScreen({ navigation }: any) {
         <View style={styles.filterCard}>
           <View style={styles.filterHeader}>
             <Text style={styles.filterTitle}>Filtras</Text>
-            <Text style={styles.filterDescription}>Ieškokite pagal recepto pavadinimą ir pasirinkite valgio tipą.</Text>
           </View>
 
           <View style={styles.fieldGroup}>
@@ -107,31 +119,26 @@ export default function RecipesListScreen({ navigation }: any) {
 
           <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>Valgio tipas</Text>
-            <View style={styles.chips}>
-              {MEAL_TYPES.map((option) => {
-                const selected = mealType === option.value;
-
-                return (
-                  <Pressable
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={mealType}
+                onValueChange={(itemValue) => setMealType(itemValue)}
+                style={styles.picker}
+              >
+                {MEAL_TYPES.map((option) => (
+                  <Picker.Item
                     key={option.value || 'all'}
-                    onPress={() => setMealType(option.value)}
-                    style={[styles.chip, selected ? styles.chipSelected : null]}
-                  >
-                    <Text style={[styles.chipText, selected ? styles.chipTextSelected : null]}>
-                      {option.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+                    label={option.label}
+                    value={option.value}
+                  />
+                ))}
+              </Picker>
             </View>
           </View>
 
           <View style={styles.filterActions}>
             <Pressable style={styles.filterButton} onPress={handleApplyFilters}>
               <Text style={styles.filterButtonText}>Filtruoti</Text>
-            </Pressable>
-            <Pressable style={styles.resetButton} onPress={handleResetFilters}>
-              <Text style={styles.resetButtonText}>Išvalyti</Text>
             </Pressable>
           </View>
         </View>
@@ -141,7 +148,11 @@ export default function RecipesListScreen({ navigation }: any) {
           <Text style={styles.resultsCount}>{filteredRecipes.length} receptai</Text>
         </View>
 
-        {filteredRecipes.length === 0 ? (
+        {isFetching ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : filteredRecipes.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>Receptų nerasta</Text>
             <Text style={styles.emptyText}>Pabandykite kitą paieškos žodį arba pakeiskite valgio tipą.</Text>
@@ -216,30 +227,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     color: colors.textPrimary,
   },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
+  pickerContainer: {
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    borderRadius: 10,
+    overflow: 'hidden',
   },
-  chipSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  chipTextSelected: {
-    color: colors.surface,
+  picker: {
+    height: 56,
+    color: colors.textPrimary,
   },
   filterButton: {
     minHeight: 48,
@@ -302,5 +299,34 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    marginTop: 10,
+  },
+  pageButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    minWidth: 100,
+    alignItems: 'center',
+  },
+  pageButtonDisabled: {
+    backgroundColor: colors.border,
+  },
+  pageButtonText: {
+    color: colors.surface,
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  pageText: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

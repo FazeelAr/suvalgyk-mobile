@@ -12,6 +12,14 @@
       "distribution": "internal"
     },
     "production": {
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://suvalgyk-devbac-qhyqyg-19c394-95-217-106-148.sslip.io/",
+        "EXPO_PUBLIC_CLOUDFLARE_R2_ACCOUNT_ID": "8ede76b002ec73f9e1914fe41200f41a",
+        "EXPO_PUBLIC_CLOUDFLARE_R2_ACCESS_KEY": "b3ee2cd2def7d383709ddf1ca4d92ced",
+        "EXPO_PUBLIC_CLOUDFLARE_R2_SECRET_KEY": "483c55faeab898a16c2259c8b541fb485c21599672bae228319176963d5169ce",
+        "EXPO_PUBLIC_CLOUDFLARE_R2_BUCKET_NAME": "suvalgyk",
+        "EXPO_PUBLIC_CLOUDFLARE_R2_PUBLIC_DOMAIN": "media.suvalgyk.lt"
+      },
       "android": {
         "buildType": "app-bundle"
       }

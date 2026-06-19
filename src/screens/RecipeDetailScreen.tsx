@@ -34,7 +34,7 @@ export default function RecipeDetailScreen({ route }: any) {
         
         setRecipe(recipeData);
         const recipes = (relatedData as any).results || relatedData;
-        setRelatedRecipes(Array.isArray(recipes) ? recipes.slice(0, 3) : []);
+        setRelatedRecipes(Array.isArray(recipes) ? recipes.slice(0, 4) : []);
       } catch (error) {
         console.error('Error fetching recipe:', error);
       } finally {
@@ -272,11 +272,12 @@ export default function RecipeDetailScreen({ route }: any) {
             <Text style={styles.sectionTitle}>Galbūt patiks ir šie 👇</Text>
             <View style={styles.relatedRecipesContainer}>
               {relatedRecipes.map((relatedRecipe: any) => (
-                <RecipeCard 
-                  key={relatedRecipe.id}
-                  recipe={relatedRecipe}
-                  onPress={() => navigation.push('RecipeDetail', { slug: relatedRecipe.slug })}
-                />
+                <View key={relatedRecipe.id} style={styles.relatedRecipeWrapper}>
+                  <RecipeCard 
+                    recipe={relatedRecipe}
+                    onPress={() => navigation.push('RecipeDetail', { slug: relatedRecipe.slug })}
+                  />
+                </View>
               ))}
             </View>
           </View>
@@ -446,6 +447,12 @@ const styles = StyleSheet.create({
 
   // Related Recipes
   relatedRecipesContainer: {
-    gap: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginHorizontal: -4,
+  },
+  relatedRecipeWrapper: {
+    width: '50%',
   },
 });
