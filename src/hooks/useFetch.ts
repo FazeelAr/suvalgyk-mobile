@@ -40,7 +40,7 @@ export function useFetch<T>(
   const [loading, setLoading] = useState(!skip);
   const [error, setError] = useState<Error | null>(null);
   const retryCountRef = useRef(0);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<any>(null);
 
   // Check cache
   const getCachedData = useCallback(() => {

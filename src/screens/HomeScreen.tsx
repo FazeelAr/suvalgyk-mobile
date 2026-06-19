@@ -55,6 +55,15 @@ export default function HomeScreen() {
   }, [error]);
 
   const handleGenerateRecipe = async () => {
+    if (inputType === 'text' && !products.trim()) {
+      Alert.alert('Klaida', 'Prašome įvesti ingredientų sąrašą.');
+      return;
+    }
+    if (inputType === 'image' && !imageBase64) {
+      Alert.alert('Klaida', 'Prašome įkelti arba nufotografuoti ingredientų nuotrauką.');
+      return;
+    }
+
     const payload: Record<string, any> = {
       ...requestPayload,
     };
