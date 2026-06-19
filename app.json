@@ -4,7 +4,7 @@
     "slug": "suvalgyk",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.ico",
+    "icon": "./assets/icon.png",
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
@@ -18,7 +18,7 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/icon.ico"
+        "foregroundImage": "./assets/icon.png"
       },
       "predictiveBackGestureEnabled": false
     },
