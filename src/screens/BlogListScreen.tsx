@@ -58,7 +58,7 @@ export default function BlogListScreen({ navigation }: any) {
           <Text style={styles.heroText}>
             Straipsniai ir naujienos iš mūsų virtuvės, pateikti taip pat, kaip svetainės mobiliajame vaizde.
           </Text>
-          <OptimizedImage uri="https://suvalgyk.lt/blog.png" style={styles.heroImage} />
+          <Image source={require('../../assets/blog.png')} style={styles.heroImage} />
         </View>
 
         {error ? (
@@ -99,22 +99,30 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.white,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: 12,
-    overflow: 'hidden',
+    padding: 16,
+    gap: 16,
   },
   cardImage: {
     width: '100%',
-    height: 180,
+    aspectRatio: 4 / 3,
+    height: undefined,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
     resizeMode: 'cover',
   },
   cardPlaceholder: {
     width: '100%',
-    height: 180,
+    aspectRatio: 4 / 3,
     backgroundColor: colors.creamWarm,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -122,19 +130,18 @@ const styles = StyleSheet.create({
     fontSize: 34,
   },
   cardBody: {
-    padding: 14,
-    gap: 6,
+    gap: 12,
   },
   cardTitle: {
     color: colors.textPrimary,
     fontSize: 16,
-    fontWeight: '800',
-    lineHeight: 22,
+    fontWeight: '600',
+    lineHeight: 24,
   },
   cardDescription: {
     color: colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 24,
   },
   heroCard: {
     backgroundColor: colors.creamWarm,
@@ -157,7 +164,7 @@ const styles = StyleSheet.create({
   },
   heroImage: {
     width: '100%',
-    height: 220,
+    height: 120,
     borderRadius: 16,
     resizeMode: 'cover',
   },

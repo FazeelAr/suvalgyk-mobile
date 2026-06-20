@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import RecipeCard from '../components/RecipeCard';
+import Pagination from '../components/Pagination';
 import { recipeService } from '../services/recipeService';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
@@ -30,23 +31,36 @@ export default function RecipesListScreen({ navigation }: any) {
   const [search, setSearch] = useState('');
 
   const [mealType, setMealType] = useState('');
-  const [appliedSearch, setAppliedSearch] = useState('');
-  const [appliedMealType, setAppliedMealType] = useState('');
+  
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrevious, setHasPrevious] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
 
-  const loadRecipes = async (overrides: { search?: string; meal_type?: string } = {}, isInitial = false) => {
+  const loadRecipes = async (overrides: { search?: string; meal_type?: string; page?: number } = {}, isInitial = false) => {
     if (isInitial) setInitialLoading(true);
     else setIsFetching(true);
+
+    const targetPage = overrides.page !== undefined ? overrides.page : page;
 
     try {
       const data = await recipeService.getRecipes({
         search: overrides.search ?? search,
         meal_type: overrides.meal_type ?? mealType,
-        page_size: 100, // Fetch up to 100 recipes at once
+        page: targetPage,
+        page_size: 12, // Match frontend pagination typical size
       });
 
-      setRecipes(Array.isArray(data) ? data : (data as any).results || []);
+      setRecipes(data.results || []);
+      setHasNext(!!data.next);
+      setHasPrevious(!!data.previous);
+      setTotalCount(data.count || 0);
     } catch {
       setRecipes([]);
+      setHasNext(false);
+      setHasPrevious(false);
+      setTotalCount(0);
     } finally {
       setInitialLoading(false);
       setIsFetching(false);
@@ -57,35 +71,21 @@ export default function RecipesListScreen({ navigation }: any) {
     void loadRecipes({}, true);
   }, []);
 
-  const filteredRecipes = useMemo(() => {
-    const normalizedSearch = appliedSearch.trim().toLowerCase();
-
-    return recipes.filter((recipe) => {
-      const recipeTitle = String(recipe?.title || '').toLowerCase();
-      const recipeDescription = String(recipe?.one_liner_description || recipe?.description || '').toLowerCase();
-      const recipeMealType = String(recipe?.meal_type || '').toLowerCase();
-      const matchesSearch =
-        normalizedSearch.length === 0 ||
-        recipeTitle.includes(normalizedSearch) ||
-        recipeDescription.includes(normalizedSearch);
-      const matchesMealType = appliedMealType.length === 0 || recipeMealType === appliedMealType;
-
-      return matchesSearch && matchesMealType;
-    });
-  }, [recipes, appliedSearch, appliedMealType]);
-
   const handleApplyFilters = () => {
-    setAppliedSearch(search);
-    setAppliedMealType(mealType);
-    void loadRecipes({ search, meal_type: mealType });
+    setPage(1);
+    void loadRecipes({ search, meal_type: mealType, page: 1 });
   };
 
   const handleResetFilters = () => {
     setSearch('');
     setMealType('');
-    setAppliedSearch('');
-    setAppliedMealType('');
-    void loadRecipes({ search: '', meal_type: '' });
+    setPage(1);
+    void loadRecipes({ search: '', meal_type: '', page: 1 });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    void loadRecipes({ page: newPage });
   };
 
   if (initialLoading) {
@@ -145,32 +145,42 @@ export default function RecipesListScreen({ navigation }: any) {
 
         <View style={styles.resultsHeader}>
           <Text style={styles.resultsTitle}>Receptai</Text>
-          <Text style={styles.resultsCount}>{filteredRecipes.length} receptai</Text>
+          <Text style={styles.resultsCount}>{totalCount} receptai</Text>
         </View>
 
         {isFetching ? (
           <View style={{ padding: 40, alignItems: 'center' }}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
-        ) : filteredRecipes.length === 0 ? (
+        ) : recipes.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>Receptų nerasta</Text>
             <Text style={styles.emptyText}>Pabandykite kitą paieškos žodį arba pakeiskite valgio tipą.</Text>
           </View>
         ) : (
-          <FlatList
-            data={filteredRecipes}
-            keyExtractor={(item) => item.id?.toString() || item.slug}
-            renderItem={({ item }) => (
-              <RecipeCard
-                recipe={item}
-                onPress={() => navigation.navigate('RecipeDetail', { slug: item.slug })}
+          <>
+            <FlatList
+              data={recipes}
+              keyExtractor={(item) => item.id?.toString() || item.slug}
+              renderItem={({ item }) => (
+                <RecipeCard
+                  recipe={item}
+                  onPress={() => navigation.navigate('RecipeDetail', { slug: item.slug })}
+                />
+              )}
+              numColumns={2}
+              scrollEnabled={false}
+              contentContainerStyle={styles.list}
+            />
+
+            {totalCount > 0 && (
+              <Pagination
+                page={page}
+                count={totalCount}
+                onPageChange={handlePageChange}
               />
             )}
-            numColumns={2}
-            scrollEnabled={false}
-            contentContainerStyle={styles.list}
-          />
+          </>
         )}
       </ScrollView>
     </View>
@@ -299,34 +309,5 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
-  },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 4,
-    marginTop: 10,
-  },
-  pageButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-    minWidth: 100,
-    alignItems: 'center',
-  },
-  pageButtonDisabled: {
-    backgroundColor: colors.border,
-  },
-  pageButtonText: {
-    color: colors.surface,
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  pageText: {
-    color: colors.textPrimary,
-    fontWeight: '700',
-    fontSize: 14,
   },
 });

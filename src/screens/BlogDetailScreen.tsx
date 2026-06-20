@@ -6,6 +6,7 @@ import { colors } from '../theme/colors';
 import { resolveMediaUrl } from '../lib/media';
 import { spacing } from '../theme/spacing';
 import OptimizedImage from '../components/OptimizedImage';
+import Markdown from 'react-native-markdown-display';
 
 export default function BlogDetailScreen({ route }: any) {
   const { slug } = route.params || {};
@@ -20,7 +21,6 @@ export default function BlogDetailScreen({ route }: any) {
   if (loading) {
     return (
       <View style={[styles.center, { flex: 1, backgroundColor: colors.background }]}>
-        <AppHeader showBack onBack={() => {}} title="Tinklaraštis" />
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -30,7 +30,6 @@ export default function BlogDetailScreen({ route }: any) {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <AppHeader title={post?.title || 'Straipsnis'} />
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.heroCard}>
           {imageUrl ? <OptimizedImage uri={imageUrl} style={styles.heroImage} /> : null}
@@ -39,7 +38,7 @@ export default function BlogDetailScreen({ route }: any) {
         </View>
 
         <View style={styles.contentCard}>
-          <Text style={styles.content}>{post?.content}</Text>
+          <Markdown style={markdownStyles}>{post?.content || ''}</Markdown>
         </View>
       </ScrollView>
     </View>
@@ -93,5 +92,41 @@ const styles = StyleSheet.create({
   center: {
     alignItems: 'center',
     justifyContent: 'center',
+  },
+});
+
+const markdownStyles = StyleSheet.create({
+  body: {
+    color: colors.textPrimary,
+    fontSize: 15,
+    lineHeight: 24,
+  },
+  heading1: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+    color: colors.textPrimary,
+  },
+  heading2: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+    color: colors.textPrimary,
+  },
+  heading3: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 12,
+    marginBottom: 6,
+    color: colors.textPrimary,
+  },
+  paragraph: {
+    marginTop: 0,
+    marginBottom: 12,
+  },
+  list_item: {
+    marginBottom: 4,
   },
 });

@@ -26,7 +26,7 @@ export type RecipeStatusResponse = {
 
 export const recipeService = {
   // Fetch all public recipes
-  getRecipes: async (filters: Record<string, any> = {}): Promise<RecipeList[] | { results: RecipeList[] }> => {
+  getRecipes: async (filters: Record<string, any> = {}): Promise<{ count: number; next: string | null; previous: string | null; results: RecipeList[] }> => {
     try {
       const response = await api.get('/api/recipes/', { params: filters });
       return response.data;
