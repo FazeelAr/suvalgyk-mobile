@@ -25,10 +25,12 @@ export default function ToggleButtonGroup({ options = [], selected, onSelect }: 
             onPress={() => onSelect && onSelect(opt.value)}
             style={[styles.button, isActive ? { backgroundColor: colors.primary } : { backgroundColor: 'transparent' }]}
           >
-            <Text style={[styles.buttonText, isActive ? { color: '#fff' } : { color: colors.primary }]}>
-              {opt.icon ? `${opt.icon} ` : ''}
-              {opt.label}
-            </Text>
+            <View style={styles.buttonContent}>
+              {opt.icon && <Text style={[styles.buttonIcon, isActive ? { color: '#fff' } : { color: colors.primary }]}>{opt.icon}</Text>}
+              <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.buttonText, isActive ? { color: '#fff' } : { color: colors.primary }]}>
+                {opt.label}
+              </Text>
+            </View>
           </TouchableOpacity>
         );
       })}
@@ -52,8 +54,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  buttonIcon: {
+    fontSize: 16,
+  },
   buttonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
   },
 });
