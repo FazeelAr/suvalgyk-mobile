@@ -11,11 +11,13 @@ import { colors } from './theme/colors';
 // Keep the native splash visible until JS is ready, then we'll hide it instantly
 ExpoSplashScreen.preventAutoHideAsync();
 
-export default function AppEntry() {
+import { SettingsProvider, useSettings } from './contexts/SettingsContext';
+
+function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
+  const { colors } = useSettings();
 
   useEffect(() => {
-    // Immediately hide the native splash screen so our custom JS logo screen takes over
     ExpoSplashScreen.hideAsync();
   }, []);
 
@@ -36,5 +38,13 @@ export default function AppEntry() {
         </NavigationContainer>
       </View>
     </SafeAreaProvider>
+  );
+}
+
+export default function AppEntry() {
+  return (
+    <SettingsProvider>
+      <AppContent />
+    </SettingsProvider>
   );
 }

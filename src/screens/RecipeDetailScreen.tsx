@@ -2,10 +2,10 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { recipeService } from '../services/recipeService';
-import { colors } from '../theme/colors';
 import { resolveMediaUrl } from '../lib/media';
 import OptimizedImage from '../components/OptimizedImage';
 import RecipeCard from '../components/RecipeCard';
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function RecipeDetailScreen({ route }: any) {
   const { slug } = route.params || {};
@@ -16,17 +16,16 @@ export default function RecipeDetailScreen({ route }: any) {
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [voted, setVoted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const { colors, t } = useSettings();
 
   const imageUrl = useMemo(() => resolveMediaUrl(recipe?.image), [recipe?.image]);
 
-  // Fetch recipe data with async/await
   useEffect(() => {
     if (!slug) return;
 
     const fetchRecipeData = async () => {
       try {
         setLoading(true);
-        // Run both requests in parallel
         const [recipeData, relatedData] = await Promise.all([
           recipeService.getRecipeBySlug(slug),
           recipeService.getRelatedRecipes(slug),
@@ -66,13 +65,13 @@ export default function RecipeDetailScreen({ route }: any) {
         ''
       );
 
-      Alert.alert('Sėkmė', 'Ačiū už jūsų nuomonę!');
+      Alert.alert(t('recipe.success'), t('recipe.feedbackThanks'));
       setVoted(true);
       setDismissed(false);
     } catch (e) {
-      Alert.alert('Klaida', 'Nepavyko išsaugoti jūsų nuomonės');
+      Alert.alert(t('common.error'), t('recipe.feedbackError'));
     }
-  }, [recipe?.id]);
+  }, [recipe?.id, t]);
 
   const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('lt-LT', {
@@ -82,12 +81,18 @@ export default function RecipeDetailScreen({ route }: any) {
     }).format(amount);
   }, []);
 
-  if (loading) return <ActivityIndicator size="large" color={colors.primary} />;
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   if (!recipe) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-        <Text style={{ color: colors.textSecondary }}>Receptas nerastas</Text>
+        <Text style={{ color: colors.textSecondary }}>{t('recipe.notFound')}</Text>
       </View>
     );
   }
@@ -95,45 +100,49 @@ export default function RecipeDetailScreen({ route }: any) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.container}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('RecipesList')}>
+          <Text style={[styles.backButtonText, { color: colors.primary }]}>{t('recipe.back')}</Text>
+        </TouchableOpacity>
+
         {/* Hero Image */}
         {imageUrl && (
           <View style={styles.heroContainer}>
             <OptimizedImage
               uri={imageUrl}
-              style={styles.heroImage}
+              style={[styles.heroImage, { backgroundColor: colors.creamWarm }]}
               resizeMode="cover"
               aspectRatio={16 / 9}
             />
-            <TouchableOpacity style={styles.saveButton} onPress={() => Alert.alert('Išsaugota', 'Receptas išsaugotas!')}>
+            <TouchableOpacity style={styles.saveButton} onPress={() => Alert.alert(t('common.saved'), t('recipe.savedAlert'))}>
               <Text style={styles.saveIcon}>🔖</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Title */}
-        <Text style={styles.title}>{recipe?.title}</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{recipe?.title}</Text>
 
         {/* Meta Grid */}
-        <View style={styles.metaGrid}>
+        <View style={[styles.metaGrid, { backgroundColor: colors.creamWarm }]}>
           <View style={styles.metaRow}>
             <View style={styles.metaGridItem}>
               <Text style={styles.metaEmoji}>⏱️</Text>
-              <Text style={styles.metaText}>{recipe?.total_time_min || 0} min</Text>
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{recipe?.total_time_min || 0} {t('recipe.mins')}</Text>
             </View>
             <View style={styles.metaGridItem}>
               <Text style={styles.metaEmoji}>👥</Text>
-              <Text style={styles.metaText}>{recipe?.servings || 0} porcijos</Text>
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{recipe?.servings || 0} {t('recipe.servings')}</Text>
             </View>
           </View>
           <View style={styles.metaRow}>
             <View style={styles.metaGridItem}>
               <Text style={styles.metaEmoji}>💰</Text>
-              <Text style={styles.metaText}>{formatCurrency(Number(recipe?.estimated_cost || 0))}</Text>
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>{formatCurrency(Number(recipe?.estimated_cost || 0))}</Text>
             </View>
             <View style={styles.metaGridItem}>
               <Text style={styles.metaEmoji}>⭐</Text>
-              <Text style={styles.metaText}>
-                {recipe?.difficulty === 'easy' ? 'Lengva' : recipe?.difficulty === 'medium' ? 'Vidutinė' : 'Sunkia'}
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+                {recipe?.difficulty === 'easy' ? t('recipe.difficulty.easy') : recipe?.difficulty === 'medium' ? t('recipe.difficulty.medium') : t('recipe.difficulty.hard')}
               </Text>
             </View>
           </View>
@@ -142,18 +151,18 @@ export default function RecipeDetailScreen({ route }: any) {
         {/* Additional Tags */}
         <View style={styles.tagsContainer}>
           {recipe?.meal_type && (
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{
-                recipe.meal_type === 'breakfast' ? 'Pusryčiai' :
-                recipe.meal_type === 'lunch' ? 'Pietūs' :
-                recipe.meal_type === 'dinner' ? 'Vakarienė' :
-                recipe.meal_type === 'snack' ? 'Užkandis' : recipe.meal_type
+            <View style={[styles.tag, { backgroundColor: colors.primaryLight }]}>
+              <Text style={[styles.tagText, { color: colors.primary }]}>{
+                recipe.meal_type === 'breakfast' ? t('home.meal.breakfast') :
+                recipe.meal_type === 'lunch' ? t('home.meal.lunch') :
+                recipe.meal_type === 'dinner' ? t('home.meal.dinner') :
+                recipe.meal_type === 'snack' ? t('home.meal.snack') : recipe.meal_type
               }</Text>
             </View>
           )}
           {recipe?.dietary && (
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{recipe.dietary}</Text>
+            <View style={[styles.tag, { backgroundColor: colors.primaryLight }]}>
+              <Text style={[styles.tagText, { color: colors.primary }]}>{recipe.dietary}</Text>
             </View>
           )}
         </View>
@@ -161,34 +170,34 @@ export default function RecipeDetailScreen({ route }: any) {
         {/* Description */}
         {recipe?.description && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Aprašymas</Text>
-            <Text style={styles.description}>{recipe.description}</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('recipe.description')}</Text>
+            <Text style={[styles.description, { color: colors.textSecondary }]}>{recipe.description}</Text>
           </View>
         )}
 
         {/* Ingredients */}
         {recipe?.ingredients && recipe.ingredients.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Ingredientai</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('recipe.ingredients')}</Text>
             {recipe.ingredients.map((ing: any, i: number) => {
               const isChecked = checkedIngredients.has(i);
               return (
                 <TouchableOpacity
                   key={ing?.id ?? i}
-                  style={styles.ingredientRow}
+                  style={[styles.ingredientRow, { borderBottomColor: colors.border }]}
                   onPress={() => toggleIngredient(i)}
                   activeOpacity={0.7}
                 >
                   <View style={styles.checkboxContainer}>
-                    <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
+                    <View style={[styles.checkbox, { borderColor: colors.primary, backgroundColor: colors.surface }, isChecked && { backgroundColor: colors.primary }]}>
                       {isChecked && <Text style={styles.checkmark}>✓</Text>}
                     </View>
                     <View style={styles.ingredientContent}>
-                      <Text style={[styles.itemName, isChecked && styles.strikethrough]}>
+                      <Text style={[styles.itemName, { color: colors.textPrimary }, isChecked && styles.strikethrough]}>
                         {ing?.emoji ? `${ing.emoji} ` : ''}
-                        {ing?.name ?? 'Ingredientas'}
+                        {ing?.name ?? t('recipe.ingredientFallback')}
                       </Text>
-                      <Text style={styles.itemMeta}>
+                      <Text style={[styles.itemMeta, { color: colors.textSecondary }]}>
                         {ing?.amount ? ing.amount : ''}
                         {ing?.discount?.item_name ? `${ing?.amount ? ' · ' : ''}${ing.discount.item_name}` : ''}
                         {typeof ing?.discount?.price === 'number'
@@ -206,15 +215,15 @@ export default function RecipeDetailScreen({ route }: any) {
         {/* Steps */}
         {recipe?.steps && recipe.steps.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Žingsniai</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('recipe.steps')}</Text>
             {recipe.steps.map((step: any, idx: number) => (
-              <View key={step?.id ?? idx} style={styles.stepContainer}>
-                <View style={styles.stepNumberContainer}>
+              <View key={step?.id ?? idx} style={[styles.stepContainer, { borderBottomColor: colors.border }]}>
+                <View style={[styles.stepNumberContainer, { backgroundColor: colors.primary }]}>
                   <Text style={styles.stepNumber}>{idx + 1}</Text>
                 </View>
                 <View style={styles.stepContent}>
-                  {step?.action && <Text style={styles.stepAction}>{step.action}</Text>}
-                  <Text style={styles.stepDescription}>{step?.description}</Text>
+                  {step?.action && <Text style={[styles.stepAction, { color: colors.textPrimary }]}>{step.action}</Text>}
+                  <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>{step?.description}</Text>
                 </View>
               </View>
             ))}
@@ -223,44 +232,44 @@ export default function RecipeDetailScreen({ route }: any) {
 
         {/* Tips */}
         {recipe?.tips && (
-          <View style={[styles.section, styles.tipSection]}>
-            <Text style={styles.sectionTitle}>Patarimai</Text>
-            <Text style={styles.tipsText}>{recipe.tips}</Text>
+          <View style={[styles.section, styles.tipSection, { backgroundColor: colors.creamWarm }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('recipe.tips')}</Text>
+            <Text style={[styles.tipsText, { color: colors.textSecondary }]}>{recipe.tips}</Text>
           </View>
         )}
 
         {/* Feedback Section */}
         {voted && !dismissed ? (
-          <View style={styles.feedbackAlert}>
+          <View style={[styles.feedbackAlert, { borderLeftColor: colors.primary, backgroundColor: colors.surfaceHover }]}>
             <View style={styles.feedbackAlertContent}>
               <Text style={styles.feedbackAlertIcon}>✅</Text>
               <View>
-                <Text style={styles.feedbackAlertTitle}>Ačiū!</Text>
-                <Text style={styles.feedbackAlertText}>Jūsų nuomonė sėkmingai išsaugota.</Text>
+                <Text style={[styles.feedbackAlertTitle, { color: colors.textPrimary }]}>{t('recipe.thanks')}</Text>
+                <Text style={[styles.feedbackAlertText, { color: colors.textSecondary }]}>{t('recipe.feedbackSaved')}</Text>
               </View>
             </View>
             <TouchableOpacity
               style={styles.feedbackAlertClose}
               onPress={() => setDismissed(true)}
             >
-              <Text style={styles.feedbackAlertCloseText}>×</Text>
+              <Text style={[styles.feedbackAlertCloseText, { color: colors.textSecondary }]}>×</Text>
             </TouchableOpacity>
           </View>
         ) : !voted ? (
-          <View style={styles.feedbackSection}>
-            <Text style={styles.feedbackTitle}>Kaip jums šis receptas?</Text>
+          <View style={[styles.feedbackSection, { backgroundColor: colors.creamWarm }]}>
+            <Text style={[styles.feedbackTitle, { color: colors.textPrimary }]}>{t('recipe.howDoYouLike')}</Text>
             <View style={styles.feedbackOptions}>
               <TouchableOpacity
-                style={styles.feedbackButton}
+                style={[styles.feedbackButton, { borderColor: colors.border, backgroundColor: colors.surface }]}
                 onPress={() => handleVote('positive')}
               >
-                <Text style={styles.feedbackButtonText}>😋 Skanu</Text>
+                <Text style={[styles.feedbackButtonText, { color: colors.textPrimary }]}>{t('recipe.delicious')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.feedbackButton}
+                style={[styles.feedbackButton, { borderColor: colors.border, backgroundColor: colors.surface }]}
                 onPress={() => handleVote('negative')}
               >
-                <Text style={styles.feedbackButtonText}>🤔 Ne labai</Text>
+                <Text style={[styles.feedbackButtonText, { color: colors.textPrimary }]}>{t('recipe.notReally')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -269,7 +278,7 @@ export default function RecipeDetailScreen({ route }: any) {
         {/* Related Recipes */}
         {relatedRecipes.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Galbūt patiks ir šie 👇</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('recipe.mightLike')}</Text>
             <View style={styles.relatedRecipesContainer}>
               {relatedRecipes.map((relatedRecipe: any) => (
                 <View key={relatedRecipe.id} style={styles.relatedRecipeWrapper}>
@@ -289,8 +298,17 @@ export default function RecipeDetailScreen({ route }: any) {
 
 const styles = StyleSheet.create({
   container: { padding: 16, paddingBottom: 32 },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
   heroContainer: { position: 'relative', marginBottom: 20 },
-  heroImage: { width: '100%', aspectRatio: 16 / 9, borderRadius: 16, overflow: 'hidden', backgroundColor: colors.creamWarm },
+  heroImage: { width: '100%', aspectRatio: 16 / 9, borderRadius: 16, overflow: 'hidden' },
   saveButton: {
     position: 'absolute',
     top: 12,
@@ -309,69 +327,57 @@ const styles = StyleSheet.create({
   },
   saveIcon: { fontSize: 20 },
   
-  // Title
-  title: { fontSize: 26, fontWeight: '900', color: colors.textPrimary, marginBottom: 16, lineHeight: 32 },
+  title: { fontSize: 26, fontWeight: '900', marginBottom: 16, lineHeight: 32 },
   
-  // Meta Grid
-  metaGrid: { marginBottom: 16, backgroundColor: colors.creamWarm, borderRadius: 12, padding: 12 },
+  metaGrid: { marginBottom: 16, borderRadius: 12, padding: 12 },
   metaRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8 },
   metaGridItem: { flexDirection: 'row', alignItems: 'center', width: '48%', gap: 8 },
   metaEmoji: { fontSize: 18 },
-  metaText: { color: colors.textSecondary, fontSize: 14, fontWeight: '600' },
+  metaText: { fontSize: 14, fontWeight: '600' },
   
   tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  tag: { backgroundColor: colors.primaryLight, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
-  tagText: { color: colors.primary, fontSize: 12, fontWeight: '700' },
+  tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  tagText: { fontSize: 12, fontWeight: '700' },
   
-  // Section
   section: { marginBottom: 24 },
-  sectionTitle: { fontWeight: '800', fontSize: 18, marginBottom: 12, color: colors.textPrimary },
-  description: { color: colors.textSecondary, lineHeight: 22, marginBottom: 8 },
+  sectionTitle: { fontWeight: '800', fontSize: 18, marginBottom: 12 },
+  description: { lineHeight: 22, marginBottom: 8 },
   
-  // Ingredients
-  ingredientRow: { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  ingredientRow: { paddingVertical: 12, borderBottomWidth: 1 },
   checkboxContainer: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 2,
-    backgroundColor: '#fff',
   },
-  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
   checkmark: { color: '#fff', fontSize: 14, fontWeight: 'bold' },
   ingredientContent: { flex: 1 },
-  itemName: { color: colors.textPrimary, fontWeight: '700', fontSize: 15, marginBottom: 4 },
-  strikethrough: { textDecorationLine: 'line-through', color: colors.textSecondary, opacity: 0.6 },
-  itemMeta: { color: colors.textSecondary, fontSize: 13 },
+  itemName: { fontWeight: '700', fontSize: 15, marginBottom: 4 },
+  strikethrough: { textDecorationLine: 'line-through', opacity: 0.6 },
+  itemMeta: { fontSize: 13 },
   
-  // Steps
-  stepContainer: { flexDirection: 'row', gap: 12, marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  stepContainer: { flexDirection: 'row', gap: 12, marginBottom: 16, paddingBottom: 16, borderBottomWidth: 1 },
   stepNumberContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 2,
   },
   stepNumber: { color: '#fff', fontWeight: '800', fontSize: 16 },
   stepContent: { flex: 1, paddingTop: 2 },
-  stepAction: { fontWeight: '700', color: colors.textPrimary, marginBottom: 4 },
-  stepDescription: { color: colors.textSecondary, lineHeight: 22 },
+  stepAction: { fontWeight: '700', marginBottom: 4 },
+  stepDescription: { lineHeight: 22 },
   
-  // Tips
-  tipSection: { backgroundColor: colors.creamWarm, padding: 16, borderRadius: 12, marginBottom: 16 },
-  tipsText: { color: colors.textSecondary, lineHeight: 22 },
+  tipSection: { padding: 16, borderRadius: 12, marginBottom: 16 },
+  tipsText: { lineHeight: 22 },
 
-  // Feedback
   feedbackAlert: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
@@ -379,7 +385,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 12,
     borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
   },
   feedbackAlertContent: {
     flexDirection: 'row',
@@ -393,12 +398,10 @@ const styles = StyleSheet.create({
   feedbackAlertTitle: {
     fontWeight: '800',
     fontSize: 14,
-    color: colors.textPrimary,
     marginBottom: 2,
   },
   feedbackAlertText: {
     fontSize: 12,
-    color: colors.textSecondary,
   },
   feedbackAlertClose: {
     width: 24,
@@ -409,10 +412,8 @@ const styles = StyleSheet.create({
   feedbackAlertCloseText: {
     fontSize: 20,
     fontWeight: '300',
-    color: colors.textSecondary,
   },
   feedbackSection: {
-    backgroundColor: colors.creamWarm,
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
@@ -420,7 +421,6 @@ const styles = StyleSheet.create({
   feedbackTitle: {
     fontWeight: '800',
     fontSize: 16,
-    color: colors.textPrimary,
     marginBottom: 12,
   },
   feedbackOptions: {
@@ -430,10 +430,8 @@ const styles = StyleSheet.create({
   feedbackButton: {
     flex: 1,
     minHeight: 48,
-    backgroundColor: '#fff',
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 12,
@@ -441,11 +439,9 @@ const styles = StyleSheet.create({
   feedbackButtonText: {
     fontWeight: '700',
     fontSize: 13,
-    color: colors.textPrimary,
     textAlign: 'center',
   },
 
-  // Related Recipes
   relatedRecipesContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',

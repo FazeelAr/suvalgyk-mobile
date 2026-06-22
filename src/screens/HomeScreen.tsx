@@ -15,60 +15,59 @@ import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import ToggleButtonGroup from '../components/ToggleButtonGroup';
 import OptimizedImage from '../components/OptimizedImage';
-import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { useGenerateRecipe } from '../hooks/useGenerateRecipe';
-
-const INPUT_MODES = [
-  { value: 'image', label: 'Įkelti nuotrauką', icon: '📷' },
-  { value: 'text', label: 'Įvesti ranka', icon: '✏️' },
-];
-
-const MEAL_TYPES = [
-  { value: 'breakfast', label: 'Pusryčiai', emoji: '🍳' },
-  { value: 'lunch', label: 'Pietūs', emoji: '🥗' },
-  { value: 'dinner', label: 'Vakarienė', emoji: '🍝' },
-  { value: 'snack', label: 'Užkandis', emoji: '🍪' },
-];
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
+  const { colors, t } = useSettings();
+
+  const INPUT_MODES = [
+    { value: 'image', label: t('home.mode.image'), icon: '📷' },
+    { value: 'text', label: t('home.mode.text'), icon: '✏️' },
+  ];
+
+  const MEAL_TYPES = [
+    { value: 'breakfast', label: t('home.meal.breakfast'), emoji: '🍳' },
+    { value: 'lunch', label: t('home.meal.lunch'), emoji: '🥗' },
+    { value: 'dinner', label: t('home.meal.dinner'), emoji: '🍝' },
+    { value: 'snack', label: t('home.meal.snack'), emoji: '🍪' },
+  ];
+
   const [inputType, setInputType] = useState<'image' | 'text'>('text');
-  const [products, setProducts] = useState('Bulvės, kiaušiniai, sūris');
-  const [dietaryPreferences, setDietaryPreferences] = useState('Be glitimo, jei įmanoma');
+  const [products, setProducts] = useState('');
+  const [dietaryPreferences, setDietaryPreferences] = useState('');
   const [mealType, setMealType] = useState('lunch');
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
   const { generateRecipe, generating, progressMsg, error } = useGenerateRecipe();
 
   const requestPayload = useMemo(() => ({
     products,
     dietary_prefs: dietaryPreferences,
     meal_type: mealType,
-    budget: 'average', // required by serializer
+    budget: 'average',
   }), [products, dietaryPreferences, mealType]);
 
   useEffect(() => {
     if (error) {
-      Alert.alert('Klaida', error);
+      Alert.alert(t('common.error'), error);
     }
   }, [error]);
 
   const handleGenerateRecipe = async () => {
     if (inputType === 'text' && !products.trim()) {
-      Alert.alert('Klaida', 'Prašome įvesti ingredientų sąrašą.');
+      Alert.alert(t('common.error'), t('home.ingredients.error'));
       return;
     }
-    if (inputType === 'image' && !imageBase64) {
-      Alert.alert('Klaida', 'Prašome įkelti arba nufotografuoti ingredientų nuotrauką.');
+    if (inputType === 'image' && !imageUri) {
+      Alert.alert(t('common.error'), t('home.image.error'));
       return;
     }
 
-    const payload: Record<string, any> = {
-      ...requestPayload,
-    };
-    if (inputType === 'image' && imageBase64) {
-      payload.image_base64 = imageBase64;
+    const payload: Record<string, any> = { ...requestPayload };
+    if (inputType === 'image' && imageUri) {
+      payload.image_uri = imageUri;
     }
 
     generateRecipe(payload, (slug) => {
@@ -87,34 +86,33 @@ export default function HomeScreen() {
           : await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permission.granted) {
-        Alert.alert('Reikia leidimo', 'Kad galėtume pridėti nuotrauką, suteikite leidimą fotoaparatui arba galerijai.');
+        Alert.alert(t('home.permissionReq'), t('home.permissionDesc'));
         return;
       }
 
       const result =
         source === 'camera'
-          ? await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true, aspect: [4, 3], base64: true })
-          : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: true, aspect: [4, 3], base64: true });
+          ? await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: false })
+          : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: false });
 
       if (!result.canceled && result.assets[0]?.uri) {
         setImageUri(result.assets[0].uri);
-        setImageBase64(result.assets[0].base64 || null);
         setInputType('image');
       }
     } catch {
-      Alert.alert('Klaida', 'Nepavyko atidaryti nuotraukos pasirinkimo.');
+      Alert.alert(t('common.error'), t('home.pickerError'));
     }
   };
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.heroStrip}>
+        <View style={[styles.heroStrip, { backgroundColor: colors.creamWarm }]}>
           <Text style={styles.heroEmoji}>👨‍🍳</Text>
-          <Text style={styles.heroTitle}>Suvalgyk - neišmesk!</Text>
+          <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>{t('home.heroTitle')}</Text>
         </View>
 
-        <View style={styles.formCard}>
+        <View style={[styles.formCard, { backgroundColor: colors.surfaceHover }]}>
           <ToggleButtonGroup
             options={INPUT_MODES}
             selected={inputType}
@@ -123,10 +121,10 @@ export default function HomeScreen() {
 
           {inputType === 'text' ? (
             <View style={styles.sectionGap}>
-              <Text style={styles.label}>Ingredientų sąrašas</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('home.ingredients.label')}</Text>
               <TextInput
-                style={[styles.textArea, styles.multiLine]}
-                placeholder="Bulvės, kiaušiniai, sūris..."
+                style={[styles.textArea, styles.multiLine, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
+                placeholder={t('home.ingredients.placeholder')}
                 placeholderTextColor={colors.textMute}
                 value={products}
                 onChangeText={setProducts}
@@ -135,22 +133,34 @@ export default function HomeScreen() {
             </View>
           ) : (
             <View style={styles.sectionGap}>
-              <Text style={styles.label}>Įkelk ingredientų nuotrauką</Text>
-              <View style={styles.uploadBox}>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{t('home.image.label')}</Text>
+              <View style={[styles.uploadBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 {imageUri ? (
-                  <OptimizedImage uri={imageUri} style={styles.previewImage} />
+                  <View style={{ width: '100%' }}>
+                    <OptimizedImage uri={imageUri} style={styles.previewImage} />
+                    <Pressable
+                      style={styles.deleteImageButton}
+                      onPress={() => {
+                        setImageUri(null);
+                      }}
+                    >
+                      <Text style={styles.deleteImageText}>✕</Text>
+                    </Pressable>
+                  </View>
                 ) : (
-                  <Text style={styles.uploadIcon}>🖼️</Text>
+                  <>
+                    <Text style={styles.uploadIcon}>🖼️</Text>
+                    <Text style={[styles.uploadTitle, { color: colors.textPrimary }]}>{t('home.image.title')}</Text>
+                    <Text style={[styles.uploadText, { color: colors.textSecondary }]}>{t('home.image.text')}</Text>
+                  </>
                 )}
-                <Text style={styles.uploadTitle}>Nufotografuok arba įkelk iš galerijos</Text>
-                <Text style={styles.uploadText}>Įkėlimas veikia kaip mobiliojo vaizdo atitikmuo iš svetainės.</Text>
 
                 <View style={styles.uploadActions}>
-                  <Pressable style={styles.primaryButton} onPress={() => pickImage('camera')}>
-                    <Text style={styles.primaryButtonText}>📷 Kamera</Text>
+                  <Pressable style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={() => pickImage('camera')}>
+                    <Text style={[styles.primaryButtonText, { color: '#fff' }]}>{t('home.image.camera')}</Text>
                   </Pressable>
-                  <Pressable style={styles.secondaryButton} onPress={() => pickImage('library')}>
-                    <Text style={styles.secondaryButtonText}>🖼️ Galerija</Text>
+                  <Pressable style={[styles.secondaryButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => pickImage('library')}>
+                    <Text style={[styles.secondaryButtonText, { color: colors.textPrimary }]}>{t('home.image.gallery')}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -158,10 +168,10 @@ export default function HomeScreen() {
           )}
 
           <View style={styles.sectionGap}>
-            <Text style={styles.label}>Papildomi pageidavimai</Text>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>{t('home.prefs.label')}</Text>
             <TextInput
-              style={[styles.textArea, styles.multiLine]}
-              placeholder="Be glitimo, mažiau druskos..."
+              style={[styles.textArea, styles.multiLine, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary }]}
+              placeholder={t('home.prefs.placeholder')}
               placeholderTextColor={colors.textMute}
               value={dietaryPreferences}
               onChangeText={setDietaryPreferences}
@@ -170,17 +180,25 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.sectionGap}>
-            <Text style={styles.label}>Valgio tipas</Text>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>{t('home.meal.label')}</Text>
             <View style={styles.chips}>
               {MEAL_TYPES.map((meal) => {
                 const isSelected = mealType === meal.value;
                 return (
                   <Pressable
                     key={meal.value}
-                    style={[styles.chip, isSelected ? styles.chipSelected : null]}
+                    style={[
+                      styles.chip,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                      isSelected ? { backgroundColor: colors.primary, borderColor: colors.primary } : null,
+                    ]}
                     onPress={() => setMealType(meal.value)}
                   >
-                    <Text style={[styles.chipText, isSelected ? styles.chipTextSelected : null]}>
+                    <Text style={[
+                      styles.chipText,
+                      { color: colors.textSecondary },
+                      isSelected ? { color: '#fff' } : null,
+                    ]}>
                       {meal.emoji} {meal.label}
                     </Text>
                   </Pressable>
@@ -190,20 +208,20 @@ export default function HomeScreen() {
           </View>
 
           <Pressable
-            style={[styles.submitButton, generating ? styles.submitButtonDisabled : null]}
+            style={[styles.submitButton, { backgroundColor: colors.primary }, generating ? styles.submitButtonDisabled : null]}
             onPress={handleGenerateRecipe}
             disabled={generating}
           >
-            <Text style={styles.submitButtonText}>{generating ? (progressMsg || 'Gaminama...') : 'Sukurti receptą'}</Text>
+            <Text style={[styles.submitButtonText, { color: '#fff' }]}>{generating ? (progressMsg || t('home.generating')) : t('home.submit')}</Text>
           </Pressable>
         </View>
       </ScrollView>
 
       <Modal transparent visible={generating} animationType="fade" statusBarTranslucent>
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Palaukite</Text>
-            <Text style={styles.modalDescription}>Ruošiamas receptas</Text>
+          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>{t('common.wait')}</Text>
+            <Text style={[styles.modalDescription, { color: colors.textSecondary }]}>{t('home.modal.desc')}</Text>
             <Image 
               source={require('../../assets/preparing-recipe.gif')}
               style={styles.preparingGif}
@@ -211,13 +229,12 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.background },
+  screen: { flex: 1 },
   content: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
@@ -225,7 +242,6 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   heroStrip: {
-    backgroundColor: colors.creamWarm,
     borderRadius: 16,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -236,31 +252,25 @@ const styles = StyleSheet.create({
   },
   heroEmoji: { fontSize: 20 },
   heroTitle: {
-    color: colors.textPrimary,
     fontSize: 18,
     fontWeight: '900',
     textAlign: 'center',
   },
   formCard: {
-    backgroundColor: '#ececec',
     borderRadius: 12,
     padding: 12,
     gap: 12,
   },
   sectionGap: { gap: 6 },
   label: {
-    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
   },
   textArea: {
     width: '100%',
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#d4d4d4',
     borderRadius: 8,
     padding: 12,
-    color: colors.textPrimary,
     fontSize: 14,
   },
   multiLine: {
@@ -268,11 +278,9 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   uploadBox: {
-    backgroundColor: colors.surface,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#d4d4d4',
     alignItems: 'center',
     gap: 8,
   },
@@ -282,15 +290,29 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 4,
   },
+  deleteImageButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteImageText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
   uploadIcon: { fontSize: 32 },
   uploadTitle: {
-    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '800',
     textAlign: 'center',
   },
   uploadText: {
-    color: colors.textSecondary,
     fontSize: 13,
     lineHeight: 20,
     textAlign: 'center',
@@ -305,13 +327,11 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 48,
     borderRadius: 10,
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 14,
   },
   primaryButtonText: {
-    color: colors.surface,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -319,15 +339,12 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 48,
     borderRadius: 10,
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#d4d4d4',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 14,
   },
   secondaryButtonText: {
-    color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '800',
   },
@@ -337,9 +354,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chip: {
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: '#d4d4d4',
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 999,
@@ -349,23 +364,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chipSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
   chipText: {
-    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
     textAlign: 'center',
   },
-  chipTextSelected: {
-    color: colors.surface,
-  },
   submitButton: {
     minHeight: 52,
     borderRadius: 12,
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -373,9 +379,9 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
   submitButtonText: {
-    color: colors.surface,
     fontSize: 16,
     fontWeight: '900',
+    textAlign: 'center',
   },
   modalBackdrop: {
     flex: 1,
@@ -387,7 +393,6 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '100%',
     maxWidth: 340,
-    backgroundColor: colors.surface,
     borderRadius: 20,
     paddingVertical: 24,
     paddingHorizontal: 20,
@@ -395,13 +400,11 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   modalTitle: {
-    color: colors.textPrimary,
     fontSize: 18,
     fontWeight: '900',
     textAlign: 'center',
   },
   modalDescription: {
-    color: colors.textSecondary,
     fontSize: 14,
     textAlign: 'center',
     marginBottom: 4,
@@ -410,11 +413,5 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     marginTop: 12,
-  },
-  modalText: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'center',
   },
 });

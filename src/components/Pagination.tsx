@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme/colors';
+import { useSettings } from '../contexts/SettingsContext';
 
 interface PaginationProps {
   page: number;
@@ -16,6 +16,7 @@ const Pagination: React.FC<PaginationProps> = ({
   pageSize = 12,
   onPageChange,
 }) => {
+  const { colors, language } = useSettings();
   const totalPages = Math.ceil(count / pageSize);
 
   if (totalPages <= 1) return null;
@@ -45,10 +46,10 @@ const Pagination: React.FC<PaginationProps> = ({
     return (
       <TouchableOpacity
         key={pageNum}
-        style={[styles.pageButton, isActive && styles.pageButtonActive]}
+        style={[styles.pageButton, isActive && { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}
         onPress={() => onPageChange(pageNum)}
       >
-        <Text style={[styles.pageText, isActive && styles.pageTextActive]}>
+        <Text style={[styles.pageText, { color: colors.textPrimary }, isActive && styles.pageTextActive]}>
           {pageNum}
         </Text>
       </TouchableOpacity>
@@ -57,7 +58,7 @@ const Pagination: React.FC<PaginationProps> = ({
 
   const renderEllipsis = (key: string) => (
     <View key={key} style={styles.ellipsisContainer}>
-      <Text style={styles.ellipsisText}>...</Text>
+      <Text style={[styles.ellipsisText, { color: colors.textSecondary }]}>...</Text>
     </View>
   );
 
@@ -70,8 +71,8 @@ const Pagination: React.FC<PaginationProps> = ({
         onPress={() => onPageChange(page - 1)}
       >
         <Ionicons name="chevron-back" size={16} color={page <= 1 ? colors.textSecondary : colors.textPrimary} />
-        <Text style={[styles.navText, page <= 1 && styles.disabledText]}>
-          Ankstesnis
+        <Text style={[styles.navText, { color: colors.textPrimary }, page <= 1 && { color: colors.textSecondary }]}>
+          {language === 'lt' ? 'Ankstesnis' : 'Previous'}
         </Text>
       </TouchableOpacity>
 
@@ -96,8 +97,8 @@ const Pagination: React.FC<PaginationProps> = ({
         disabled={page >= totalPages}
         onPress={() => onPageChange(page + 1)}
       >
-        <Text style={[styles.navText, page >= totalPages && styles.disabledText]}>
-          Kitas
+        <Text style={[styles.navText, { color: colors.textPrimary }, page >= totalPages && { color: colors.textSecondary }]}>
+          {language === 'lt' ? 'Kitas' : 'Next'}
         </Text>
         <Ionicons name="chevron-forward" size={16} color={page >= totalPages ? colors.textSecondary : colors.textPrimary} />
       </TouchableOpacity>
@@ -124,13 +125,9 @@ const styles = StyleSheet.create({
   navText: {
     fontSize: 14,
     fontWeight: '500',
-    color: colors.textPrimary,
   },
   disabledButton: {
     opacity: 0.5,
-  },
-  disabledText: {
-    color: colors.textSecondary,
   },
   pagesContainer: {
     flexDirection: 'row',
@@ -145,19 +142,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
   },
-  pageButtonActive: {
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
   pageText: {
     fontSize: 14,
-    color: colors.textPrimary,
     fontWeight: '500',
   },
   pageTextActive: {
@@ -171,7 +157,6 @@ const styles = StyleSheet.create({
   },
   ellipsisText: {
     fontSize: 14,
-    color: colors.textSecondary,
     fontWeight: '600',
     letterSpacing: 1,
   },

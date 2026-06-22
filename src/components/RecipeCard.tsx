@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import OptimizedImage from './OptimizedImage';
-import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { typography } from '../theme/typography';
 import { resolveMediaUrl } from '../lib/media';
+import { useSettings } from '../contexts/SettingsContext';
 
 type Recipe = any;
 
@@ -16,39 +16,39 @@ type Props = {
 const RecipeCard = ({ recipe, onPress }: Props) => {
   const { title, description, meal_type, image } = recipe || {};
   const imageUrl = resolveMediaUrl(image);
+  const { colors, t } = useSettings();
   
-  const prepTime = recipe?.prep_time_min || recipe?.prep_time;
   const cost = recipe?.estimated_cost ? Number(recipe.estimated_cost).toFixed(2) : null;
 
   const getMealTypeLabel = (type?: string) => {
     switch (type?.toLowerCase()) {
       case 'breakfast':
-        return 'Pusryčiai';
+        return t('home.meal.breakfast');
       case 'lunch':
-        return 'Pietūs';
+        return t('home.meal.lunch');
       case 'dinner':
-        return 'Vakarienė';
+        return t('home.meal.dinner');
       case 'snack':
-        return 'Užkandis';
+        return t('home.meal.snack');
       default:
-        return 'Patiekalas';
+        return type || 'Patiekalas';
     }
   };
 
   return (
-    <TouchableOpacity activeOpacity={0.85} style={styles.card} onPress={onPress}>
+    <TouchableOpacity activeOpacity={0.85} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.primary }]} onPress={onPress}>
       <OptimizedImage uri={imageUrl} style={styles.image} />
 
       <View style={styles.contentContainer}>
         <View>
-          <Text style={styles.title} numberOfLines={2}>{title}</Text>
-          <Text style={styles.description} numberOfLines={2}>{description}</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={2}>{title}</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]} numberOfLines={2}>{description}</Text>
         </View>
 
         <View style={styles.footer}>
-          <View style={styles.badge}><Text style={styles.badgeText}>{getMealTypeLabel(meal_type)}</Text></View>
+          <View style={[styles.badge, { backgroundColor: colors.primaryLight }]}><Text style={[styles.badgeText, { color: colors.primary }]}>{getMealTypeLabel(meal_type)}</Text></View>
           <View style={styles.metaInfo}>
-            {cost && <Text style={styles.metaTextPrimary}>€{cost}</Text>}
+            {cost && <Text style={[styles.metaTextPrimary, { color: colors.primary }]}>€{cost}</Text>}
           </View>
         </View>
       </View>
@@ -60,29 +60,23 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
     overflow: 'hidden',
     flex: 1,
     margin: spacing.xs,
-    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 1,
   },
   image: { width: '100%', aspectRatio: 16 / 9, resizeMode: 'cover' },
-  placeholder: { width: '100%', aspectRatio: 16 / 9, backgroundColor: colors.creamWarm, alignItems: 'center', justifyContent: 'center' },
-  placeholderText: { fontSize: 28 },
   contentContainer: { padding: spacing.sm, flex: 1, justifyContent: 'space-between' },
-  title: { ...typography.h3, fontSize: 14, color: colors.textPrimary, marginBottom: spacing.xs },
-  description: { ...typography.body, fontSize: 11, lineHeight: 15, color: colors.textSecondary, marginBottom: spacing.sm },
+  title: { ...typography.h3, fontSize: 14, marginBottom: spacing.xs },
+  description: { ...typography.body, fontSize: 11, lineHeight: 15, marginBottom: spacing.sm },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.xs },
-  badge: { backgroundColor: colors.primaryLight, paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: 6 },
-  badgeText: { ...typography.label, fontSize: 10, color: colors.primary },
+  badge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: 6 },
+  badgeText: { ...typography.label, fontSize: 10 },
   metaInfo: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  metaText: { fontSize: 10, color: colors.textSecondary, fontWeight: '500' },
-  metaTextPrimary: { fontSize: 11, color: colors.primary, fontWeight: '700' },
+  metaTextPrimary: { fontSize: 11, fontWeight: '700' },
 });
 
 export default RecipeCard;

@@ -6,6 +6,7 @@ export type RecipeRequestParams = {
   dietary_preferences?: string;
   meal_type?: string;
   image_url?: string;
+  image_base64?: string;
 };
 
 export type RecipeRequestResponse = {
@@ -92,18 +93,51 @@ export const recipeService = {
     }
   },
 
+  // Upload image to backend
+  uploadImage: async (uri: string): Promise<string> => {
+    try {
+      const filename = uri.split('/').pop() || 'upload.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+      const formData = new FormData();
+      formData.append('image', { uri, name: filename, type } as any);
+
+      const response = await api.post('/api/upload-image/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        timeout: 60000,
+      });
+
+      if (response.data.success && response.data.image_url) {
+        return response.data.image_url;
+      }
+      throw new Error('Nepavyko įkelti nuotraukos');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw parseError(error);
+    }
+  },
+
   // Create a new recipe request (AI generation)
   createRecipeRequest: async (data: RecipeRequestParams): Promise<RecipeRequestResponse> => {
     try {
       // POST requests need longer timeout for cloud backend processing
-      const response = await api.post('/api/recipe-requests/', {
+      const payload: any = {
         products: data.products || '',
         dietary_prefs: data.dietary_preferences || '',
         meal_type: data.meal_type || 'lunch',
         budget: 'budget',
         language: 'lt', // Lithuania
         image_url: data.image_url || '',
-      }, { timeout: 60000 }); // 60 seconds for recipe generation
+      };
+      
+      if (data.image_base64) {
+        payload.image_base64 = data.image_base64;
+      }
+
+      const response = await api.post('/api/recipe-requests/', payload, { timeout: 60000 }); // 60 seconds for recipe generation
       
       return {
         success: true,

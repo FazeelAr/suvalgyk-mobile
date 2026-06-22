@@ -27,6 +27,15 @@ export const useGenerateRecipe = () => {
     setProgressMsg('Gaminamas receptas...');
 
     try {
+      // If we have a local image URI, upload it first
+      if (formData.image_uri) {
+        setProgressMsg('Įkeliama nuotrauka...');
+        const imageUrl = await recipeService.uploadImage(formData.image_uri);
+        formData.image_url = imageUrl;
+        delete formData.image_uri;
+      }
+
+      setProgressMsg('Gaminamas receptas...');
       const response = await recipeService.createRecipeRequest(formData);
 
       if (response.success) {

@@ -1,23 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Pressable, Image, ScrollView } from 'react-native';
-import { colors } from '../theme/colors';
 import { blogService } from '../services/blogService';
 import { resolveMediaUrl } from '../lib/media';
 import { spacing } from '../theme/spacing';
 import OptimizedImage from '../components/OptimizedImage';
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function BlogListScreen({ navigation }: any) {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { colors, t } = useSettings();
 
   useEffect(() => {
     blogService
       .getBlogPosts()
       .then((d: any) => setPosts(Array.isArray(d) ? d : d.results || []))
-      .catch((err) => setError(err instanceof Error ? err.message : 'Nepavyko įkelti tinklaraščio.'))
+      .catch((err) => setError(err instanceof Error ? err.message : t('common.error')))
       .finally(() => setLoading(false));
-  }, []);
+  }, [t]);
 
   if (loading) {
     return (
@@ -31,18 +32,18 @@ export default function BlogListScreen({ navigation }: any) {
     const imageUrl = resolveMediaUrl(item.image);
 
     return (
-      <Pressable style={styles.card} onPress={() => navigation.navigate('BlogDetail', { slug: item.slug })}>
+      <Pressable style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => navigation.navigate('BlogDetail', { slug: item.slug })}>
         {imageUrl ? (
-          <OptimizedImage uri={imageUrl} style={styles.cardImage} />
+          <OptimizedImage uri={imageUrl} style={[styles.cardImage, { borderColor: colors.border }]} />
         ) : (
-          <View style={styles.cardPlaceholder}>
+          <View style={[styles.cardPlaceholder, { backgroundColor: colors.creamWarm, borderColor: colors.border }]}>
             <Text style={styles.cardPlaceholderText}>📝</Text>
           </View>
         )}
 
         <View style={styles.cardBody}>
-          <Text style={styles.cardTitle}>{item.title}</Text>
-          <Text style={styles.cardDescription} numberOfLines={3}>
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{item.title}</Text>
+          <Text style={[styles.cardDescription, { color: colors.textSecondary }]} numberOfLines={3}>
             {item.meta_description}
           </Text>
         </View>
@@ -53,26 +54,26 @@ export default function BlogListScreen({ navigation }: any) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
-        <View style={styles.heroCard}>
-          <Text style={styles.heroTitle}>Tinklaraštis</Text>
-          <Text style={styles.heroText}>
-            Straipsniai ir naujienos iš mūsų virtuvės, pateikti taip pat, kaip svetainės mobiliajame vaizde.
+        <View style={[styles.heroCard, { backgroundColor: colors.creamWarm, borderBottomColor: colors.border }]}>
+          <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>{t('tab.blogs')}</Text>
+          <Text style={[styles.heroText, { color: colors.textSecondary }]}>
+            {t('blog.heroText')}
           </Text>
           <Image source={require('../../assets/blog.png')} style={styles.heroImage} />
         </View>
 
         {error ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>Tinklaraštis laikinai nepasiekiamas</Text>
-            <Text style={styles.emptyText}>{error}</Text>
+          <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{t('blog.tempUnavailable')}</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{error}</Text>
           </View>
         ) : null}
 
         {!error && posts.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>Straipsnių kol kas nėra</Text>
-            <Text style={styles.emptyText}>
-              Kai backend grąžins įrašus, jie čia bus rodomi su nuotraukomis ir santraukomis.
+          <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{t('blog.notFound')}</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              {t('blog.emptyDesc')}
             </Text>
           </View>
         ) : null}
@@ -99,10 +100,8 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   card: {
-    backgroundColor: colors.white,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
     marginBottom: 12,
     padding: 16,
     gap: 16,
@@ -113,16 +112,13 @@ const styles = StyleSheet.create({
     height: undefined,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
     resizeMode: 'cover',
   },
   cardPlaceholder: {
     width: '100%',
     aspectRatio: 4 / 3,
-    backgroundColor: colors.creamWarm,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -133,32 +129,26 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cardTitle: {
-    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 24,
   },
   cardDescription: {
-    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 24,
   },
   heroCard: {
-    backgroundColor: colors.creamWarm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: 16,
     gap: 10,
   },
   heroTitle: {
-    color: colors.textPrimary,
     fontSize: 22,
     fontWeight: '900',
   },
   heroText: {
-    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 20,
   },
@@ -170,21 +160,17 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     padding: 20,
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: 16,
     marginHorizontal: spacing.md,
     marginTop: 12,
   },
   emptyTitle: {
-    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '800',
     marginBottom: 6,
   },
   emptyText: {
-    color: colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
   },

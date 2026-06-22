@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   FlatList,
@@ -13,26 +13,25 @@ import { Picker } from '@react-native-picker/picker';
 import RecipeCard from '../components/RecipeCard';
 import Pagination from '../components/Pagination';
 import { recipeService } from '../services/recipeService';
-import { colors } from '../theme/colors';
-import { spacing } from '../theme/spacing';
-
-const MEAL_TYPES = [
-  { value: '', label: 'Visi' },
-  { value: 'breakfast', label: 'Pusryčiai' },
-  { value: 'lunch', label: 'Pietūs' },
-  { value: 'dinner', label: 'Vakarienė' },
-  { value: 'snack', label: 'Užkandis' },
-];
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function RecipesListScreen({ navigation }: any) {
+  const { colors, t } = useSettings();
   const [recipes, setRecipes] = useState<any[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
   const [search, setSearch] = useState('');
 
+  const MEAL_TYPES = [
+    { value: '', label: t('recipe.all') },
+    { value: 'breakfast', label: t('home.meal.breakfast') },
+    { value: 'lunch', label: t('home.meal.lunch') },
+    { value: 'dinner', label: t('home.meal.dinner') },
+    { value: 'snack', label: t('home.meal.snack') },
+  ];
+
   const [mealType, setMealType] = useState('');
   
-  // Pagination state
   const [page, setPage] = useState(1);
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
@@ -49,7 +48,7 @@ export default function RecipesListScreen({ navigation }: any) {
         search: overrides.search ?? search,
         meal_type: overrides.meal_type ?? mealType,
         page: targetPage,
-        page_size: 12, // Match frontend pagination typical size
+        page_size: 12,
       });
 
       setRecipes(data.results || []);
@@ -76,13 +75,6 @@ export default function RecipesListScreen({ navigation }: any) {
     void loadRecipes({ search, meal_type: mealType, page: 1 });
   };
 
-  const handleResetFilters = () => {
-    setSearch('');
-    setMealType('');
-    setPage(1);
-    void loadRecipes({ search: '', meal_type: '', page: 1 });
-  };
-
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
     void loadRecipes({ page: newPage });
@@ -99,31 +91,31 @@ export default function RecipesListScreen({ navigation }: any) {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.screenContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.filterCard}>
+        <View style={[styles.filterCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.filterHeader}>
-            <Text style={styles.filterTitle}>Filtras</Text>
+            <Text style={[styles.filterTitle, { color: colors.textPrimary }]}>{t('recipe.filter')}</Text>
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Paieška pagal pavadinimą</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>{t('recipe.searchTitle')}</Text>
             <TextInput
               value={search}
               onChangeText={setSearch}
-              placeholder="Ieškoti receptų"
+              placeholder={t('recipe.searchPlaceholder')}
               placeholderTextColor={colors.textMute}
-              style={styles.input}
+              style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
               returnKeyType="search"
               onSubmitEditing={handleApplyFilters}
             />
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>Valgio tipas</Text>
-            <View style={styles.pickerContainer}>
+            <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>{t('home.meal.label')}</Text>
+            <View style={[styles.pickerContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
               <Picker
                 selectedValue={mealType}
                 onValueChange={(itemValue) => setMealType(itemValue)}
-                style={styles.picker}
+                style={[styles.picker, { color: colors.textPrimary }]}
               >
                 {MEAL_TYPES.map((option) => (
                   <Picker.Item
@@ -137,15 +129,15 @@ export default function RecipesListScreen({ navigation }: any) {
           </View>
 
           <View style={styles.filterActions}>
-            <Pressable style={styles.filterButton} onPress={handleApplyFilters}>
-              <Text style={styles.filterButtonText}>Filtruoti</Text>
+            <Pressable style={[styles.filterButton, { backgroundColor: colors.primary }]} onPress={handleApplyFilters}>
+              <Text style={[styles.filterButtonText, { color: '#fff' }]}>{t('recipe.filterBtn')}</Text>
             </Pressable>
           </View>
         </View>
 
         <View style={styles.resultsHeader}>
-          <Text style={styles.resultsTitle}>Receptai</Text>
-          <Text style={styles.resultsCount}>{totalCount} receptai</Text>
+          <Text style={[styles.resultsTitle, { color: colors.textPrimary }]}>{t('tab.recipes')}</Text>
+          <Text style={[styles.resultsCount, { color: colors.textSecondary }]}>{totalCount} {t('recipe.recipesCount')}</Text>
         </View>
 
         {isFetching ? (
@@ -153,9 +145,9 @@ export default function RecipesListScreen({ navigation }: any) {
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : recipes.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>Receptų nerasta</Text>
-            <Text style={styles.emptyText}>Pabandykite kitą paieškos žodį arba pakeiskite valgio tipą.</Text>
+          <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{t('recipe.notFound')}</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{t('recipe.emptySearch')}</Text>
           </View>
         ) : (
           <>
@@ -196,9 +188,7 @@ const styles = StyleSheet.create({
   list: { paddingTop: 8, paddingBottom: 8 },
   center: { alignItems: 'center', justifyContent: 'center' },
   filterCard: {
-    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: 16,
     padding: 14,
     marginBottom: 12,
@@ -208,14 +198,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   filterTitle: {
-    color: colors.textPrimary,
     fontSize: 18,
     fontWeight: '900',
-  },
-  filterDescription: {
-    color: colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19,
   },
   filterActions: {
     gap: 10,
@@ -224,55 +208,32 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   fieldLabel: {
-    color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '700',
   },
   input: {
     minHeight: 48,
-    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: 10,
     paddingHorizontal: 12,
-    color: colors.textPrimary,
   },
   pickerContainer: {
-    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: colors.border,
     borderRadius: 10,
     overflow: 'hidden',
   },
   picker: {
     height: 56,
-    color: colors.textPrimary,
   },
   filterButton: {
     minHeight: 48,
     borderRadius: 12,
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   filterButtonText: {
-    color: colors.surface,
     fontSize: 15,
     fontWeight: '900',
-  },
-  resetButton: {
-    minHeight: 48,
-    borderRadius: 12,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resetButtonText: {
-    color: colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '800',
   },
   resultsHeader: {
     flexDirection: 'row',
@@ -282,31 +243,25 @@ const styles = StyleSheet.create({
     paddingBottom: 6,
   },
   resultsTitle: {
-    color: colors.textPrimary,
     fontSize: 18,
     fontWeight: '900',
   },
   resultsCount: {
-    color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '700',
   },
   emptyState: {
-    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: 18,
     marginTop: 8,
   },
   emptyTitle: {
-    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '800',
     marginBottom: 6,
   },
   emptyText: {
-    color: colors.textSecondary,
     fontSize: 13,
     lineHeight: 19,
   },

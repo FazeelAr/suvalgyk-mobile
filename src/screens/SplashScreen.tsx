@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
 import { SvgUri } from 'react-native-svg';
-import { colors } from '../theme/colors';
+import { useSettings } from '../contexts/SettingsContext';
 
 type Props = {
   onFinish: () => void;
@@ -9,9 +9,9 @@ type Props = {
 
 export default function SplashScreen({ onFinish }: Props) {
   const opacity = new Animated.Value(0);
+  const { colors, theme } = useSettings();
 
   useEffect(() => {
-    // Fade in, hold, then fade out
     Animated.sequence([
       Animated.timing(opacity, {
         toValue: 1,
@@ -30,7 +30,7 @@ export default function SplashScreen({ onFinish }: Props) {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.View style={[styles.logoWrapper, { opacity }]}>
         <SvgUri
           width="240"
@@ -45,7 +45,6 @@ export default function SplashScreen({ onFinish }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },

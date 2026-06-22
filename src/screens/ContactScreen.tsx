@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, Linking } from 'react-native';
-import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { contactService } from '../services/contactService';
 import { SvgXml } from 'react-native-svg';
+import { useSettings } from '../contexts/SettingsContext';
 
 const contactIllustration = `
 <svg width="175" height="110" viewBox="0 0 175 110" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -24,22 +24,23 @@ export default function ContactScreen() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const { colors, t } = useSettings();
 
   const handleSubmit = async () => {
     if (!name.trim() || !email.trim() || !message.trim()) {
-      Alert.alert('Trūksta duomenų', 'Užpildykite vardą, el. paštą ir žinutę.');
+      Alert.alert(t('common.error'), t('contact.errorFields'));
       return;
     }
 
     try {
       setSubmitting(true);
       await contactService.submitContactForm({ name, email, message });
-      Alert.alert('Pavyko', 'Jūsų žinutė išsiųsta sėkmingai.');
+      Alert.alert(t('contact.success'), t('contact.successMsg'));
       setName('');
       setEmail('');
       setMessage('');
     } catch (error) {
-      Alert.alert('Klaida', error instanceof Error ? error.message : 'Nepavyko išsiųsti žinutės.');
+      Alert.alert(t('common.error'), error instanceof Error ? error.message : t('common.error'));
     } finally {
       setSubmitting(false);
     }
@@ -48,32 +49,32 @@ export default function ContactScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.page} showsVerticalScrollIndicator={false}>
-        <View style={styles.introCard}>
-          <Text style={styles.title}>Susisiekite su mumis</Text>
-          <Text style={styles.description}>
-            Jeigu turite pasiūlymą, pastebėjimą ar norite parašyti tiesiogiai, palikite žinutę žemiau.
+        <View style={[styles.introCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{t('contact.heroTitle')}</Text>
+          <Text style={[styles.description, { color: colors.textSecondary }]}>
+            {t('contact.heroDesc')}
           </Text>
 
-          <View style={styles.illustrationCard}>
+          <View style={[styles.illustrationCard, { backgroundColor: colors.creamWarm }]}>
             <SvgXml xml={contactIllustration} width="100%" height="100%" />
           </View>
         </View>
 
-        <View style={styles.formCard}>
-          <Text style={styles.sectionTitle}>Žinutė</Text>
+        <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Žinutė</Text>
 
-          <Text style={styles.label}>Vardas</Text>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>{t('contact.name')}</Text>
           <TextInput
-            style={styles.input}
-            placeholder="Jūsų vardas"
+            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
+            placeholder={t('contact.name')}
             placeholderTextColor={colors.textMute}
             value={name}
             onChangeText={setName}
           />
 
-          <Text style={styles.label}>El. paštas</Text>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>{t('contact.email')}</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
             placeholder="email@domeinas.lt"
             placeholderTextColor={colors.textMute}
             keyboardType="email-address"
@@ -82,10 +83,10 @@ export default function ContactScreen() {
             onChangeText={setEmail}
           />
 
-          <Text style={styles.label}>Žinutė</Text>
+          <Text style={[styles.label, { color: colors.textPrimary }]}>{t('contact.message')}</Text>
           <TextInput
-            style={[styles.input, styles.messageInput]}
-            placeholder="Parašykite savo žinutę"
+            style={[styles.input, styles.messageInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
+            placeholder={t('contact.message')}
             placeholderTextColor={colors.textMute}
             multiline
             textAlignVertical="top"
@@ -93,19 +94,19 @@ export default function ContactScreen() {
             onChangeText={setMessage}
           />
 
-          <Pressable style={[styles.button, submitting ? styles.buttonDisabled : null]} onPress={handleSubmit} disabled={submitting}>
+          <Pressable style={[styles.button, { backgroundColor: colors.primary }, submitting ? styles.buttonDisabled : null]} onPress={handleSubmit} disabled={submitting}>
             {submitting ? (
               <ActivityIndicator color={colors.surface} />
             ) : (
-              <Text style={styles.buttonText}>Siųsti</Text>
+              <Text style={[styles.buttonText, { color: '#fff' }]}>{t('contact.submit')}</Text>
             )}
           </Pressable>
         </View>
 
-        <View style={styles.emailCard}>
-          <Text style={styles.sectionTitle}>Rašykite tiesiogiai</Text>
+        <View style={[styles.emailCard, { backgroundColor: colors.creamWarm, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Rašykite tiesiogiai</Text>
           <Pressable onPress={() => void Linking.openURL('mailto:' + 'info@suvalgyk.lt')}>
-            <Text style={styles.emailText}>info@suvalgyk.lt</Text>
+            <Text style={[styles.emailText, { color: colors.primary }]}>info@suvalgyk.lt</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -120,70 +121,52 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   introCard: {
-    backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: 16,
     gap: 12,
   },
   title: {
-    color: colors.textPrimary,
     fontSize: 24,
     fontWeight: '900',
   },
   description: {
-    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 21,
   },
   illustrationCard: {
-    backgroundColor: colors.creamWarm,
     borderRadius: 16,
     overflow: 'hidden',
     height: 220,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  illustration: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: colors.creamWarm,
-  },
   formCard: {
-    backgroundColor: colors.surface,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: 16,
   },
   sectionTitle: {
-    color: colors.textPrimary,
     fontSize: 18,
     fontWeight: '900',
     marginBottom: 10,
   },
   label: {
     marginBottom: 6,
-    color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '700',
     marginTop: 8,
   },
   input: {
-    backgroundColor: colors.background,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: 12,
     borderRadius: 10,
-    color: colors.textPrimary,
   },
   messageInput: {
     minHeight: 120,
   },
   button: {
     marginTop: 14,
-    backgroundColor: colors.primary,
     minHeight: 50,
     borderRadius: 12,
     alignItems: 'center',
@@ -193,20 +176,16 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
   buttonText: {
-    color: colors.surface,
     fontWeight: '800',
     fontSize: 15,
   },
   emailCard: {
-    backgroundColor: colors.creamWarm,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: 16,
     gap: 10,
   },
   emailText: {
-    color: colors.primary,
     fontSize: 16,
     fontWeight: '800',
   },

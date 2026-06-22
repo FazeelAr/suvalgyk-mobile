@@ -2,7 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
+import { useSettings } from '../contexts/SettingsContext';
 
 import HomeScreen from '../screens/HomeScreen';
 import RecipesStackNavigator from './RecipesStackNavigator';
@@ -13,6 +13,7 @@ const Tab = createBottomTabNavigator();
 
 export default function TabNavigator() {
   const insets = useSafeAreaInsets();
+  const { colors, t } = useSettings();
 
   return (
     <Tab.Navigator
@@ -40,6 +41,7 @@ export default function TabNavigator() {
         name="Pradžia"
         component={HomeScreen}
         options={{
+          tabBarLabel: t('tab.home'),
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? 'home' : 'home-outline'} size={size - 2} color={color} />
           ),
@@ -49,6 +51,7 @@ export default function TabNavigator() {
         name="Receptai"
         component={RecipesStackNavigator}
         options={{
+          tabBarLabel: t('tab.recipes'),
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? 'restaurant' : 'restaurant-outline'} size={size - 2} color={color} />
           ),
@@ -58,6 +61,7 @@ export default function TabNavigator() {
         name="Tinklaraštis"
         component={BlogStackNavigator}
         options={{
+          tabBarLabel: t('tab.blogs'),
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? 'book' : 'book-outline'} size={size - 2} color={color} />
           ),
@@ -67,6 +71,7 @@ export default function TabNavigator() {
         name="Kontaktai"
         component={ContactScreen}
         options={{
+          tabBarLabel: t('tab.contact'),
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons name={focused ? 'mail' : 'mail-outline'} size={size - 2} color={color} />
           ),

@@ -1,17 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, StyleSheet, Image } from 'react-native';
-import AppHeader from '../components/AppHeader';
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { blogService } from '../services/blogService';
-import { colors } from '../theme/colors';
 import { resolveMediaUrl } from '../lib/media';
 import { spacing } from '../theme/spacing';
 import OptimizedImage from '../components/OptimizedImage';
 import Markdown from 'react-native-markdown-display';
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function BlogDetailScreen({ route }: any) {
   const { slug } = route.params || {};
   const [post, setPost] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { colors, t } = useSettings();
+  const navigation = useNavigation<any>();
 
   useEffect(() => {
     if (!slug) return;
@@ -28,16 +30,29 @@ export default function BlogDetailScreen({ route }: any) {
 
   const imageUrl = resolveMediaUrl(post?.image);
 
+  const markdownStyles = {
+    body: { color: colors.textPrimary, fontSize: 15, lineHeight: 24 },
+    heading1: { fontSize: 24, fontWeight: 'bold' as const, marginTop: 16, marginBottom: 8, color: colors.textPrimary },
+    heading2: { fontSize: 20, fontWeight: 'bold' as const, marginTop: 16, marginBottom: 8, color: colors.textPrimary },
+    heading3: { fontSize: 18, fontWeight: 'bold' as const, marginTop: 12, marginBottom: 6, color: colors.textPrimary },
+    paragraph: { marginTop: 0, marginBottom: 12 },
+    list_item: { marginBottom: 4 },
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.heroCard}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('BlogList')}>
+          <Text style={[styles.backButtonText, { color: colors.primary }]}>{t('common.back')}</Text>
+        </TouchableOpacity>
+        
+        <View style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {imageUrl ? <OptimizedImage uri={imageUrl} style={styles.heroImage} /> : null}
-          <Text style={styles.title}>{post?.title}</Text>
-          <Text style={styles.meta}>{post?.meta_description}</Text>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{post?.title}</Text>
+          <Text style={[styles.meta, { color: colors.textSecondary }]}>{post?.meta_description}</Text>
         </View>
 
-        <View style={styles.contentCard}>
+        <View style={[styles.contentCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Markdown style={markdownStyles}>{post?.content || ''}</Markdown>
         </View>
       </ScrollView>
@@ -50,11 +65,18 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: 12,
   },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  backButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
   heroCard: {
-    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
     overflow: 'hidden',
   },
   heroImage: {
@@ -63,14 +85,12 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   title: {
-    color: colors.textPrimary,
     fontSize: 22,
     fontWeight: '900',
     paddingHorizontal: 14,
     paddingTop: 14,
   },
   meta: {
-    color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 21,
     paddingHorizontal: 14,
@@ -78,55 +98,12 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   contentCard: {
-    backgroundColor: colors.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: 14,
-  },
-  content: {
-    color: colors.textPrimary,
-    fontSize: 15,
-    lineHeight: 24,
   },
   center: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-});
-
-const markdownStyles = StyleSheet.create({
-  body: {
-    color: colors.textPrimary,
-    fontSize: 15,
-    lineHeight: 24,
-  },
-  heading1: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-    color: colors.textPrimary,
-  },
-  heading2: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 16,
-    marginBottom: 8,
-    color: colors.textPrimary,
-  },
-  heading3: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 12,
-    marginBottom: 6,
-    color: colors.textPrimary,
-  },
-  paragraph: {
-    marginTop: 0,
-    marginBottom: 12,
-  },
-  list_item: {
-    marginBottom: 4,
   },
 });
