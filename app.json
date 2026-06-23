@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "suvalgyk",
+    "name": "Suvalgyk",
     "slug": "suvalgyk",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/suvalgyk_icon.png",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/suvalgyk_icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#faf6ee"
     },
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -16,11 +16,10 @@
     },
     "android": {
       "package": "com.suvalgyk.app",
-      "versionCode": 5,
+      "versionCode": 6,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff",
-        "foregroundImage": "./assets/suvalgyk_icon.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/suvalgyk_icon.png"
       },
       "predictiveBackGestureEnabled": false
     },

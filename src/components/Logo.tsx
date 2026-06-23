@@ -68,7 +68,7 @@ export default function Logo({ size = 120 }: Props) {
 
   return (
     <View style={[styles.fallback, { minHeight: Math.round(size * 0.46) }]}>
-      <Text style={styles.fallbackText}>SUVALGYK</Text>
+      <Text style={styles.fallbackText}>Suvalgyk</Text>
       <Text style={styles.leaf}>🌿</Text>
     </View>
   );

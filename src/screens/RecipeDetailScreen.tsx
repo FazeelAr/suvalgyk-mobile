@@ -279,7 +279,11 @@ export default function RecipeDetailScreen({ route }: any) {
         {relatedRecipes.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('recipe.mightLike')}</Text>
-            <View style={styles.relatedRecipesContainer}>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.relatedRecipesContainer}
+            >
               {relatedRecipes.map((relatedRecipe: any) => (
                 <View key={relatedRecipe.id} style={styles.relatedRecipeWrapper}>
                   <RecipeCard 
@@ -288,7 +292,7 @@ export default function RecipeDetailScreen({ route }: any) {
                   />
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </View>
         )}
       </ScrollView>
@@ -443,12 +447,10 @@ const styles = StyleSheet.create({
   },
 
   relatedRecipesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginHorizontal: -4,
+    gap: 12,
+    paddingRight: 16,
   },
   relatedRecipeWrapper: {
-    width: '50%',
+    width: 240,
   },
 });
