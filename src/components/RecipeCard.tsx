@@ -23,13 +23,13 @@ const RecipeCard = ({ recipe, onPress }: Props) => {
   const getMealTypeLabel = (type?: string) => {
     switch (type?.toLowerCase()) {
       case 'breakfast':
-        return t('home.meal.breakfast');
+        return t('recipe.meal.breakfast');
       case 'lunch':
-        return t('home.meal.lunch');
+        return t('recipe.meal.lunch');
       case 'dinner':
-        return t('home.meal.dinner');
+        return t('recipe.meal.dinner');
       case 'snack':
-        return t('home.meal.snack');
+        return t('recipe.meal.snack');
       default:
         return type || 'Patiekalas';
     }

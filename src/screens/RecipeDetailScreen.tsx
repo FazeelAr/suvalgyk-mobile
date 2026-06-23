@@ -5,6 +5,7 @@ import { recipeService } from '../services/recipeService';
 import { resolveMediaUrl } from '../lib/media';
 import OptimizedImage from '../components/OptimizedImage';
 import RecipeCard from '../components/RecipeCard';
+import ErrorState from '../components/ErrorState';
 import { useSettings } from '../contexts/SettingsContext';
 
 export default function RecipeDetailScreen({ route }: any) {
@@ -13,6 +14,7 @@ export default function RecipeDetailScreen({ route }: any) {
   const [recipe, setRecipe] = useState<any>(null);
   const [relatedRecipes, setRelatedRecipes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(new Set());
   const [voted, setVoted] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -26,6 +28,7 @@ export default function RecipeDetailScreen({ route }: any) {
     const fetchRecipeData = async () => {
       try {
         setLoading(true);
+        setError(null);
         const [recipeData, relatedData] = await Promise.all([
           recipeService.getRecipeBySlug(slug),
           recipeService.getRelatedRecipes(slug),
@@ -34,8 +37,13 @@ export default function RecipeDetailScreen({ route }: any) {
         setRecipe(recipeData);
         const recipes = (relatedData as any).results || relatedData;
         setRelatedRecipes(Array.isArray(recipes) ? recipes.slice(0, 4) : []);
-      } catch (error) {
-        console.error('Error fetching recipe:', error);
+      } catch (err: any) {
+        console.error('Error fetching recipe:', err);
+        setError(
+          err.message === 'Network Error' || !err.response 
+            ? 'Nepavyko užmegzti ryšio su serveriu. Patikrinkite interneto ryšį.' 
+            : 'Nepavyko užkrauti recepto.'
+        );
       } finally {
         setLoading(false);
       }
@@ -85,6 +93,22 @@ export default function RecipeDetailScreen({ route }: any) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
         <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <ErrorState 
+          message={error} 
+          onRetry={() => {
+            setLoading(true);
+            setError(null);
+            // Re-trigger effect by keeping slug same or extracting fetch logic
+            navigation.replace('RecipeDetail', { slug });
+          }} 
+        />
       </View>
     );
   }
@@ -153,10 +177,10 @@ export default function RecipeDetailScreen({ route }: any) {
           {recipe?.meal_type && (
             <View style={[styles.tag, { backgroundColor: colors.primaryLight }]}>
               <Text style={[styles.tagText, { color: colors.primary }]}>{
-                recipe.meal_type === 'breakfast' ? t('home.meal.breakfast') :
-                recipe.meal_type === 'lunch' ? t('home.meal.lunch') :
-                recipe.meal_type === 'dinner' ? t('home.meal.dinner') :
-                recipe.meal_type === 'snack' ? t('home.meal.snack') : recipe.meal_type
+                recipe.meal_type === 'breakfast' ? t('recipe.meal.breakfast') :
+                recipe.meal_type === 'lunch' ? t('recipe.meal.lunch') :
+                recipe.meal_type === 'dinner' ? t('recipe.meal.dinner') :
+                recipe.meal_type === 'snack' ? t('recipe.meal.snack') : recipe.meal_type
               }</Text>
             </View>
           )}

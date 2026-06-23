@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import AppNavigator from './navigation/AppNavigator';
 import AppHeader from './components/AppHeader';
@@ -13,9 +13,22 @@ ExpoSplashScreen.preventAutoHideAsync();
 
 import { SettingsProvider, useSettings } from './contexts/SettingsContext';
 
+function MainContainer() {
+  const insets = useSafeAreaInsets();
+  const { colors } = useSettings();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.background, paddingLeft: Math.max(insets.left, 0), paddingRight: Math.max(insets.right, 0) }}>
+      <AppHeader title="" />
+      <NavigationContainer>
+        <AppNavigator />
+      </NavigationContainer>
+    </View>
+  );
+}
+
 function AppContent() {
   const [showSplash, setShowSplash] = useState(true);
-  const { colors } = useSettings();
 
   useEffect(() => {
     ExpoSplashScreen.hideAsync();
@@ -31,12 +44,7 @@ function AppContent() {
 
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: colors.background }}>
-        <AppHeader title="" />
-        <NavigationContainer>
-          <AppNavigator />
-        </NavigationContainer>
-      </View>
+      <MainContainer />
     </SafeAreaProvider>
   );
 }

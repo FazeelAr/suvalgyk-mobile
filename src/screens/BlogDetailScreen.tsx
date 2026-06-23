@@ -6,24 +6,60 @@ import { resolveMediaUrl } from '../lib/media';
 import { spacing } from '../theme/spacing';
 import OptimizedImage from '../components/OptimizedImage';
 import Markdown from 'react-native-markdown-display';
+import ErrorState from '../components/ErrorState';
 import { useSettings } from '../contexts/SettingsContext';
 
 export default function BlogDetailScreen({ route }: any) {
   const { slug } = route.params || {};
   const [post, setPost] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { colors, t } = useSettings();
   const navigation = useNavigation<any>();
 
   useEffect(() => {
     if (!slug) return;
-    blogService.getBlogPostDetail(slug).then((d) => setPost(d)).finally(() => setLoading(false));
-  }, [slug]);
+    setLoading(true);
+    setError(null);
+    blogService.getBlogPostDetail(slug)
+      .then((d) => setPost(d))
+      .catch((err) => {
+        setError(
+          err.message === 'Network Error' || !err.response 
+            ? 'Nepavyko užmegzti ryšio su serveriu. Patikrinkite interneto ryšį.' 
+            : t('common.error')
+        );
+      })
+      .finally(() => setLoading(false));
+  }, [slug, t]);
 
   if (loading) {
     return (
       <View style={[styles.center, { flex: 1, backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <ErrorState 
+          message={error} 
+          onRetry={() => {
+            setLoading(true);
+            setError(null);
+            navigation.replace('BlogDetail', { slug });
+          }} 
+        />
+      </View>
+    );
+  }
+
+  if (!post) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <Text style={{ color: colors.textSecondary }}>Nepavyko rasti straipsnio.</Text>
       </View>
     );
   }

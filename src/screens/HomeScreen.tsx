@@ -351,7 +351,8 @@ const styles = StyleSheet.create({
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    justifyContent: 'space-between',
+    rowGap: 10,
   },
   chip: {
     borderWidth: 1,
@@ -359,8 +360,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 999,
     minHeight: 44,
-    flexGrow: 1,
-    flexBasis: '48%',
+    width: '48%',
     alignItems: 'center',
     justifyContent: 'center',
   },

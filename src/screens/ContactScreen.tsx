@@ -4,20 +4,7 @@ import { spacing } from '../theme/spacing';
 import { contactService } from '../services/contactService';
 import { SvgXml } from 'react-native-svg';
 import { useSettings } from '../contexts/SettingsContext';
-
-const contactIllustration = `
-<svg width="175" height="110" viewBox="0 0 175 110" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="0" y="0" width="175" height="110" rx="20" fill="#FFF8E7"/>
-  <rect x="18" y="18" width="139" height="74" rx="16" fill="#FFFFFF" stroke="#E7D9B8"/>
-  <rect x="32" y="31" width="70" height="7" rx="3.5" fill="#6A9CFE"/>
-  <rect x="32" y="45" width="96" height="6" rx="3" fill="#D7DCE8"/>
-  <rect x="32" y="57" width="84" height="6" rx="3" fill="#D7DCE8"/>
-  <path d="M132 53L148 43V63L132 53Z" fill="#FE7070"/>
-  <rect x="126" y="41" width="10" height="24" rx="5" fill="#FDCE70"/>
-  <circle cx="143" cy="31" r="8" fill="#6A9CFE"/>
-  <path d="M136 30C138 26 144 26 146 30C144 34 138 34 136 30Z" fill="#FFFFFF"/>
-  <circle cx="87.5" cy="80" r="10" fill="#6A9CFE"/>
-</svg>`;
+import { contactIllustration } from '../components/ContactIllustration';
 
 export default function ContactScreen() {
   const [name, setName] = useState('');
@@ -61,12 +48,11 @@ export default function ContactScreen() {
         </View>
 
         <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Žinutė</Text>
 
           <Text style={[styles.label, { color: colors.textPrimary }]}>{t('contact.name')}</Text>
           <TextInput
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
-            placeholder={t('contact.name')}
+            placeholder={t('contact.namePlaceholder')}
             placeholderTextColor={colors.textMute}
             value={name}
             onChangeText={setName}
@@ -75,7 +61,7 @@ export default function ContactScreen() {
           <Text style={[styles.label, { color: colors.textPrimary }]}>{t('contact.email')}</Text>
           <TextInput
             style={[styles.input, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
-            placeholder="email@domeinas.lt"
+            placeholder={t('contact.emailPlaceholder')}
             placeholderTextColor={colors.textMute}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -86,7 +72,7 @@ export default function ContactScreen() {
           <Text style={[styles.label, { color: colors.textPrimary }]}>{t('contact.message')}</Text>
           <TextInput
             style={[styles.input, styles.messageInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.textPrimary }]}
-            placeholder={t('contact.message')}
+            placeholder={t('contact.messagePlaceholder')}
             placeholderTextColor={colors.textMute}
             multiline
             textAlignVertical="top"
@@ -104,7 +90,7 @@ export default function ContactScreen() {
         </View>
 
         <View style={[styles.emailCard, { backgroundColor: colors.creamWarm, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Rašykite tiesiogiai</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('contact.writePersonally')}</Text>
           <Pressable onPress={() => void Linking.openURL('mailto:' + 'info@suvalgyk.lt')}>
             <Text style={[styles.emailText, { color: colors.primary }]}>info@suvalgyk.lt</Text>
           </Pressable>
@@ -153,7 +139,7 @@ const styles = StyleSheet.create({
   },
   label: {
     marginBottom: 6,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     marginTop: 8,
   },

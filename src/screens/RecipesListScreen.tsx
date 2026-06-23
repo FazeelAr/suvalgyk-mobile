@@ -14,20 +14,22 @@ import RecipeCard from '../components/RecipeCard';
 import Pagination from '../components/Pagination';
 import { recipeService } from '../services/recipeService';
 import { useSettings } from '../contexts/SettingsContext';
+import ErrorState from '../components/ErrorState';
 
 export default function RecipesListScreen({ navigation }: any) {
   const { colors, t } = useSettings();
   const [recipes, setRecipes] = useState<any[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   const MEAL_TYPES = [
-    { value: '', label: t('recipe.all') },
-    { value: 'breakfast', label: t('home.meal.breakfast') },
-    { value: 'lunch', label: t('home.meal.lunch') },
-    { value: 'dinner', label: t('home.meal.dinner') },
-    { value: 'snack', label: t('home.meal.snack') },
+    { value: '', label: t('recipe.meal.title') },
+    { value: 'breakfast', label: t('recipe.meal.breakfast') },
+    { value: 'lunch', label: t('recipe.meal.lunch') },
+    { value: 'dinner', label: t('recipe.meal.dinner') },
+    { value: 'snack', label: t('recipe.meal.snack') },
   ];
 
   const [mealType, setMealType] = useState('');
@@ -40,6 +42,7 @@ export default function RecipesListScreen({ navigation }: any) {
   const loadRecipes = async (overrides: { search?: string; meal_type?: string; page?: number } = {}, isInitial = false) => {
     if (isInitial) setInitialLoading(true);
     else setIsFetching(true);
+    setError(null);
 
     const targetPage = overrides.page !== undefined ? overrides.page : page;
 
@@ -55,11 +58,18 @@ export default function RecipesListScreen({ navigation }: any) {
       setHasNext(!!data.next);
       setHasPrevious(!!data.previous);
       setTotalCount(data.count || 0);
-    } catch {
+    } catch (err: any) {
       setRecipes([]);
       setHasNext(false);
       setHasPrevious(false);
       setTotalCount(0);
+      if (isInitial) {
+        setError(
+          err.message === 'Network Error' || !err.response 
+            ? 'Nepavyko užmegzti ryšio su serveriu. Patikrinkite interneto ryšį.' 
+            : 'Nepavyko užkrauti receptų.'
+        );
+      }
     } finally {
       setInitialLoading(false);
       setIsFetching(false);
@@ -88,6 +98,17 @@ export default function RecipesListScreen({ navigation }: any) {
     );
   }
 
+  if (error) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.background }}>
+        <ErrorState 
+          message={error} 
+          onRetry={() => loadRecipes({}, true)} 
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView contentContainerStyle={styles.screenContent} showsVerticalScrollIndicator={false}>
@@ -110,7 +131,7 @@ export default function RecipesListScreen({ navigation }: any) {
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>{t('home.meal.label')}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textPrimary }]}>{t('recipe.meal.title')}</Text>
             <View style={[styles.pickerContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
               <Picker
                 selectedValue={mealType}

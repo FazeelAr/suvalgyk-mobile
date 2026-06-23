@@ -4,6 +4,7 @@ import { blogService } from '../services/blogService';
 import { resolveMediaUrl } from '../lib/media';
 import { spacing } from '../theme/spacing';
 import OptimizedImage from '../components/OptimizedImage';
+import ErrorState from '../components/ErrorState';
 import { useSettings } from '../contexts/SettingsContext';
 
 export default function BlogListScreen({ navigation }: any) {
@@ -12,12 +13,24 @@ export default function BlogListScreen({ navigation }: any) {
   const [error, setError] = useState('');
   const { colors, t } = useSettings();
 
-  useEffect(() => {
+  const loadBlogs = () => {
+    setLoading(true);
+    setError('');
     blogService
       .getBlogPosts()
       .then((d: any) => setPosts(Array.isArray(d) ? d : d.results || []))
-      .catch((err) => setError(err instanceof Error ? err.message : t('common.error')))
+      .catch((err) => {
+        setError(
+          err.message === 'Network Error' || !err.response 
+            ? 'Nepavyko užmegzti ryšio su serveriu. Patikrinkite interneto ryšį.' 
+            : t('common.error')
+        );
+      })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadBlogs();
   }, [t]);
 
   if (loading) {
@@ -63,10 +76,10 @@ export default function BlogListScreen({ navigation }: any) {
         </View>
 
         {error ? (
-          <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>{t('blog.tempUnavailable')}</Text>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>{error}</Text>
-          </View>
+          <ErrorState 
+            message={error} 
+            onRetry={loadBlogs} 
+          />
         ) : null}
 
         {!error && posts.length === 0 ? (

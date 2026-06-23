@@ -3,7 +3,7 @@
     "name": "Suvalgyk",
     "slug": "suvalgyk",
     "version": "1.0.6",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/suvalgyk_icon.png",
     "splash": {
       "image": "./assets/suvalgyk_icon.png",
